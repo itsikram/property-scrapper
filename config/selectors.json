@@ -1,0 +1,27 @@
+{
+  "list": {
+    "item": "article.i-estate, .items .item, .estate-item, li.offer, article",
+    "title": ".title, h2, h3, .name",
+    "price": ".i-estate__footer-price-value, .price, .price-value, .cena",
+    "url": ".title a@href, h2 a@href, h3 a@href, a@href"
+  },
+  "detail": {
+    "external_id": "#listing-id, [data-listing-id]",
+    "title": "h1, .detail-title, .product-title",
+    "description": ".description, .text, .perex, #detail-desc",
+    "price": ".i-estate__footer-price-value, .i-estate-detail__header-price-value, .price, .price-value, .cena",
+    "address": ".address, .location, .adresa",
+    "street": ".address .street, .location .street, .adresa .ulice",
+    "zip": ".address .zip, .location .zip, .adresa .psc",
+    "layout": ".params .layout, .disposition, .param-layout",
+    "area_m2": ".params .area, .param-area, .plocha, .floor-area",
+    "condition": ".params .condition, .stav, .param-condition",
+    "floor": ".params .floor, .patro, .param-floor",
+    "type": ".params .type, .typ, .param-type",
+    "energy_class": ".params .energy, .energeticka, .param-energy",
+    "category": ".breadcrumbs .category, .labels .type, .param-category",
+    "features": ".features li, ul.features li, .property-features li",
+    "images": ".i-estate__image-link img, .gallery img@src, .image-gallery img@src, .photos img@src"
+  }
+}
+
