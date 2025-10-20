@@ -1,0 +1,33 @@
+.realt-ps-properties{margin:1.5rem 0}
+.realt-ps-section-title{margin:0 0 16px;font-size:24px;line-height:1.25;font-weight:800;color:#1a1f36}
+.realt-ps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.realt-ps-card{position:relative;background:#fff;border-radius:10px;box-shadow:0 6px 20px rgba(18,38,63,.06);overflow:hidden;transition:transform .2s ease,box-shadow .2s ease}
+.realt-ps-card:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(18,38,63,.12)}
+.realt-ps-card__media{position:relative;aspect-ratio:16/9;background:#f5f7fb}
+.realt-ps-card__media img{width:100%;height:100%;object-fit:cover;display:block}
+.realt-ps-badges{position:absolute;top:12px;left:12px;display:flex;gap:8px;z-index:2}
+.realt-ps-badge{font-size:12px;line-height:1;padding:6px 10px;border-radius:999px;background:#f0f4ff;color:#2d4cc8;font-weight:600}
+.realt-ps-badge--featured{background:#e9fff3;color:#1f9254}
+.realt-ps-badge--accent{background:#eaf2ff;color:#1b5cff}
+.realt-ps-card__mediaMeta{position:absolute;right:12px;bottom:12px;display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:rgba(0,0,0,.6);color:#fff;font-size:12px}
+.realt-ps-card__body{padding:14px 16px 16px}
+.realt-ps-card__title{margin:0 0 8px;font-size:18px;line-height:1.3;font-weight:700;color:#1a1f36}
+.realt-ps-card__desc{margin:0 0 12px;color:#4a5568;font-size:14px}
+.realt-ps-card__meta{display:flex;flex-wrap:wrap;gap:12px;color:#2d3748;font-size:14px}
+.realt-ps-card__price{color:#0b5fff;font-weight:700}
+.realt-ps-card__address{opacity:.85}
+
+/* compact list styling variant when inside narrow columns */
+@media (max-width:480px){
+	.realt-ps-card__title{font-size:16px}
+	.realt-ps-card__desc{font-size:13px}
+}
+
+/* pagination */
+.realt-ps-pagination{margin-top:20px;display:flex;justify-content:center}
+.realt-ps-pagination ul{list-style:none;margin:0;padding:0;display:flex;gap:8px}
+.realt-ps-pagination a,.realt-ps-pagination span{display:inline-block;min-width:36px;height:36px;line-height:36px;text-align:center;padding:0 12px;border-radius:8px;background:#f5f7fb;color:#1a1f36;text-decoration:none;font-weight:600}
+.realt-ps-pagination .current{background:#0b5fff;color:#fff}
+.realt-ps-card__link{position:absolute;inset:0;z-index:3}
+
+

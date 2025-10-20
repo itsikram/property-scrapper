@@ -108,6 +108,9 @@ class Importer {
 			Media::set_featured_if_missing( $post_id, $attachmentIds );
 			// Store gallery IDs for theme/plugins; common meta keys used by WP Residence
 			\update_post_meta( $post_id, 'property_images', array_map( 'intval', $attachmentIds ) );
+			// WP Residence expects a comma separated string in `property_image_gallery`
+			\update_post_meta( $post_id, 'property_image_gallery', implode( ',', array_map( 'intval', $attachmentIds ) ) );
+			\update_post_meta( $post_id, 'wpestate_property_gallery', implode( ',', array_map( 'intval', $attachmentIds ) ) );
 			// Also keep a CSV version for convenience/export
 			\update_post_meta( $post_id, '_realt_ps_gallery_ids', implode( ',', array_map( 'intval', $attachmentIds ) ) );
 		}
@@ -126,6 +129,7 @@ class Importer {
 		}
 		// Ensure labels exist but empty unless you have values
 		\update_post_meta( $post_id, 'property_price_before_label', '' );
+		\update_post_meta( $post_id, 'property_label_before', '' );
 		\update_post_meta( $post_id, 'property_price_after_label', '' );
 		if ( $address ) { \update_post_meta( $post_id, 'property_address', $address ); }
 		// Coordinates if available

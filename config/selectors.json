@@ -8,7 +8,7 @@
   "detail": {
     "external_id": "#listing-id, [data-listing-id]",
     "title": "h1, .detail-title, .product-title",
-    "description": ".description, .text, .perex, #detail-desc",
+    "description": ".entry-content, .description, .text, .perex, #detail-desc",
     "price": ".i-estate__footer-price-value, .i-estate-detail__header-price-value, .price, .price-value, .cena",
     "address": ".address, .location, .adresa",
     "street": ".address .street, .location .street, .adresa .ulice",

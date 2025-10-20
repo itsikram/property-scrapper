@@ -66,11 +66,20 @@ class CeskeRealityScraper {
 					$priceNodes = Html::query_all( $node->C14N(), $pSel );
 					if ( $priceNodes ) { $listPrice = Html::text( $priceNodes[0] ); break; }
 				}
-				// URL fallbacks
+				// URL fallbacks (prefer real detail links)
 				foreach ( $this->selectors_to_array( $selectors['list']['url'] ?? '.title a@href, h2 a@href, h3 a@href, a@href' ) as $uSel ) {
 					list( $urlCss, $urlAttr ) = $this->split_selector_attr( $uSel, 'href' );
 					$linkNodes = Html::query_all( $node->C14N(), $urlCss );
-					if ( $linkNodes ) { $link = Html::attr( $linkNodes[0], $urlAttr ); break; }
+					if ( $linkNodes ) { $link = Html::attr( $linkNodes[0], $urlAttr ); if ( $this->looks_like_detail_url( $link ) ) { break; } }
+				}
+				// If selector-based attempt failed or chose a non-detail link, scan all anchors inside the card
+				if ( ! $link || ! $this->looks_like_detail_url( $link ) ) {
+					$allAnchors = Html::query_all( $node->C14N(), 'a' );
+					$link = '';
+					foreach ( $allAnchors as $aNode ) {
+						$href = Html::attr( $aNode, 'href' );
+						if ( $this->looks_like_detail_url( $href ) ) { $link = $href; break; }
+					}
 				}
 				if ( ! $link ) { continue; }
 				$link = $this->resolve_url( $url, $link );
@@ -180,16 +189,69 @@ class CeskeRealityScraper {
 		$data['external_id'] = $this->first_text( $html, $this->selectors_to_array( $dsel['external_id'] ?? '' ) );
 		$data['title'] = $this->first_text( $html, $this->selectors_to_array( $dsel['title'] ?? 'h1' ) );
 		$data['description'] = $this->first_text( $html, $this->selectors_to_array( $dsel['description'] ?? '.description' ) );
+		if ( '' === trim( (string) $data['description'] ) ) {
+			// JSON-LD fallback
+			$scriptNodes = Html::query_all( $html, 'script' );
+			foreach ( $scriptNodes as $sn ) {
+				$type = strtolower( Html::attr( $sn, 'type' ) );
+				if ( false === strpos( $type, 'ld+json' ) ) { continue; }
+				$json = trim( Html::text( $sn ) );
+				if ( '' === $json ) { continue; }
+				$decoded = json_decode( $json, true );
+				if ( is_array( $decoded ) && isset( $decoded['description'] ) && is_string( $decoded['description'] ) ) {
+					$data['description'] = trim( $decoded['description'] );
+					break;
+				}
+			}
+			// Meta fallback
+			if ( '' === trim( (string) $data['description'] ) ) {
+				$metas = Html::query_all( $html, 'meta' );
+				foreach ( $metas as $meta ) {
+					$name = strtolower( Html::attr( $meta, 'name' ) );
+					$prop = strtolower( Html::attr( $meta, 'property' ) );
+					if ( in_array( $name, [ 'description', 'twitter:description' ], true ) || in_array( $prop, [ 'og:description' ], true ) ) {
+						$val = Html::attr( $meta, 'content' );
+						if ( '' !== trim( $val ) ) { $data['description'] = trim( $val ); break; }
+					}
+				}
+			}
+		}
 		$data['price'] = $this->first_text( $html, $this->selectors_to_array( $dsel['price'] ?? '.price' ) );
 		$data['price'] = $this->normalize_price( $data['price'] );
 		$address = $this->first_text( $html, $this->selectors_to_array( $dsel['address'] ?? '.address' ) );
 		$data['address'] = $address;
 		$data['city'] = $this->extract_city( $address );
+		// Site-specific fallback: address and city from driving distance input
+		$addrInput = Html::query_all( $html, '#driving_calculator_from' );
+		if ( $addrInput ) {
+			$inp = $addrInput[0];
+			$val = Html::attr( $inp, 'value' );
+			if ( '' !== trim( $val ) && '' === trim( (string) ( $data['address'] ?? '' ) ) ) {
+				$data['address'] = trim( $val );
+			}
+			$cityMeta = Html::attr( $inp, 'data-city' );
+			if ( '' !== trim( $cityMeta ) ) {
+				$cityOnly = trim( preg_replace( '/\s*\([^\)]*\)\s*/u', '', $cityMeta ) );
+				$data['city'] = $cityOnly ?: ( $data['city'] ?? '' );
+			}
+		}
 		// Coordinates (latitude/longitude) from JSON-LD, meta tags or data-* attributes
 		$coords = $this->extract_coordinates( $html );
 		if ( $coords ) {
 			$data['lat'] = $coords['lat'];
 			$data['lng'] = $coords['lng'];
+		}
+		// If still missing, try input data attributes directly
+		if ( ( $data['lat'] ?? null ) === null || ( $data['lng'] ?? null ) === null ) {
+			if ( ! empty( $addrInput ) ) {
+				$inp = $addrInput[0];
+				$ilat = Html::attr( $inp, 'data-coord-lat' );
+				$ilng = Html::attr( $inp, 'data-coord-lng' );
+				if ( '' !== trim( $ilat ) && '' !== trim( $ilng ) ) {
+					$data['lat'] = $this->to_float( $ilat );
+					$data['lng'] = $this->to_float( $ilng );
+				}
+			}
 		}
         // Collect image URLs using selectors that may specify different attributes
         $imgSelectors = $this->selectors_to_array( $dsel['images'] ?? '.gallery img@src, .gallery img@data-src, .gallery source@srcset' );
@@ -253,10 +315,12 @@ class CeskeRealityScraper {
 		}
 		// 3) Data attributes on likely map containers
 		if ( null === $lat || null === $lng ) {
-			$candidates = array_merge( Html::query_all( $html, 'div' ), Html::query_all( $html, 'section' ), Html::query_all( $html, 'span' ) );
+			$candidates = array_merge( Html::query_all( $html, 'div' ), Html::query_all( $html, 'section' ), Html::query_all( $html, 'span' ), Html::query_all( $html, 'input' ) );
 			foreach ( $candidates as $el ) {
 				$latRaw = Html::attr( $el, 'data-lat' ) ?: Html::attr( $el, 'data-latitude' ) ?: Html::attr( $el, 'data-geo-lat' );
 				$lngRaw = Html::attr( $el, 'data-lng' ) ?: Html::attr( $el, 'data-long' ) ?: Html::attr( $el, 'data-longitude' ) ?: Html::attr( $el, 'data-geo-lng' ) ?: Html::attr( $el, 'data-geo-lon' );
+				if ( '' === trim( (string) $latRaw ) ) { $latRaw = Html::attr( $el, 'data-coord-lat' ); }
+				if ( '' === trim( (string) $lngRaw ) ) { $lngRaw = Html::attr( $el, 'data-coord-lng' ); }
 				if ( '' !== trim( $latRaw ) && '' !== trim( $lngRaw ) ) {
 					$lat = $this->to_float( $latRaw );
 					$lng = $this->to_float( $lngRaw );
@@ -272,6 +336,20 @@ class CeskeRealityScraper {
 				if ( '' === $href ) { continue; }
 				if ( false === strpos( $href, 'map' ) && false === strpos( $href, 'google' ) ) { continue; }
 				if ( preg_match( '/([\-\+]?\d{1,2}\.\d+)\s*,\s*([\-\+]?\d{1,3}\.\d+)/', $href, $m ) ) {
+					$lat = (float) $m[1];
+					$lng = (float) $m[2];
+					break;
+				}
+			}
+		}
+		// 4b) Iframes with Google Maps embed URL containing q=lat,lng
+		if ( null === $lat || null === $lng ) {
+			$iframes = Html::query_all( $html, 'iframe' );
+			foreach ( $iframes as $frame ) {
+				$src = Html::attr( $frame, 'src' );
+				if ( '' === $src ) { continue; }
+				if ( false === strpos( $src, 'google.com/maps' ) ) { continue; }
+				if ( preg_match( '/[?&]q=([\-\+]?\d{1,2}\.\d+)\s*,\s*([\-\+]?\d{1,3}\.\d+)/', $src, $m ) ) {
 					$lat = (float) $m[1];
 					$lng = (float) $m[2];
 					break;
@@ -447,6 +525,17 @@ class CeskeRealityScraper {
 		}
 		$normalizedPath = '/' . implode( '/', $out );
 		return $scheme . '://' . $host . $normalizedPath;
+	}
+
+	private function looks_like_detail_url( string $href ): bool {
+		$href = trim( $href );
+		if ( '' === $href ) { return false; }
+		// Accept relative or absolute URLs that resemble listing detail pages
+		// Common patterns on ceskereality: /prodej/.../*.html or /pronajem/.../*.html
+		if ( preg_match( '#/(prodej|pronajem)/[^\s]+\.html#i', $href ) ) { return true; }
+		// Also accept any URL ending with an id-like slug *.html
+		if ( preg_match( '#/[^/]+\.html(?:[?#].*)?$#i', $href ) ) { return true; }
+		return false;
 	}
 }
 

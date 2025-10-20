@@ -177,7 +177,7 @@ class Admin {
 		$retries = max( 0, min( 2, (int) ( $opts['http_retries'] ?? 1 ) ) );
 		$limiter = new \Realt\PropertyScrapper\Utils\RateLimiter( $rate );
 		$client = new \Realt\PropertyScrapper\Utils\HttpClient( $limiter, '', $timeout, $retries );
-		$resp = $client->get( $url );
+		$resp = $client->get( $url ); 
 		$result = [ 'url' => $url ] + $resp;
 		\set_transient( 'realt_ps_fetch_html_result', $result, 60 );
 		\wp_safe_redirect( \admin_url( 'admin.php?page=realt-ps&tab=scraping&realt_ps_url=' . rawurlencode( $url ) . '#realt_ps_scraping_fetch' ) );
