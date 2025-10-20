@@ -16,6 +16,7 @@ class Media {
 		if ( ! function_exists( 'wp_read_image_metadata' ) ) { require_once ABSPATH . 'wp-admin/includes/image.php'; }
 		$attachmentIds = [];
 		$seen = [];
+		$index = 0;
 		foreach ( $imageUrls as $url ) {
 			if ( count( $attachmentIds ) >= $maxImages ) { break; }
 			$url = trim( (string) $url );
@@ -45,8 +46,19 @@ class Media {
 				@unlink( $tmp );
 				continue;
 			}
+			// Ensure attachment metadata and sizes are generated
+			$attached_file = get_attached_file( (int) $attachment_id );
+			if ( $attached_file ) {
+				$meta = wp_generate_attachment_metadata( (int) $attachment_id, $attached_file );
+				if ( ! is_wp_error( $meta ) && ! empty( $meta ) ) {
+					wp_update_attachment_metadata( (int) $attachment_id, $meta );
+				}
+			}
+			// Keep gallery order consistent with source
+			wp_update_post( [ 'ID' => (int) $attachment_id, 'menu_order' => $index ] );
 			update_post_meta( $attachment_id, '_realt_ps_source_url', esc_url_raw( $url ) );
 			$attachmentIds[] = (int) $attachment_id;
+			$index++;
 		}
 		return $attachmentIds;
 	}

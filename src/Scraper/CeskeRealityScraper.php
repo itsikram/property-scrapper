@@ -26,9 +26,11 @@ class CeskeRealityScraper {
 		$selectors = $this->load_selectors();
 		$startUrls = $this->get_start_urls();
 		// Runtime controls and HTTP tuning
-		$opts = \get_option( 'realt_ps_scraping', [] );
-		$maxSeconds = max( 15, (int) ( $opts['max_seconds'] ?? 50 ) );
-		$maxItems = max( 1, (int) ( $opts['max_items'] ?? 20 ) );
+		$optsScrape = \get_option( 'realt_ps_scraping', [] );
+		$optsImport = \get_option( 'realt_ps_import', [] );
+		$maxSeconds = max( 15, (int) ( $optsScrape['max_seconds'] ?? 50 ) );
+		// Prefer Import tab's max_items if set, fallback to Scraping for backward compatibility
+		$maxItems = max( 1, (int) ( $optsImport['max_items'] ?? ( $optsScrape['max_items'] ?? 5 ) ) );
 		$httpTimeout = max( 5, min( 20, (int) ( $opts['http_timeout'] ?? 10 ) ) );
 		$httpRetries = max( 0, min( 2, (int) ( $opts['http_retries'] ?? 1 ) ) );
 		$client = new HttpClient( $this->rateLimiter, '', $httpTimeout, $httpRetries );

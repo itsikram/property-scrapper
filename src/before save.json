@@ -1,0 +1,87 @@
+{
+    "core": {
+        "ID": 33910,
+        "post_title": "Prodej bytu 4+1 85 m²Kopřivnická, Praha",
+        "post_status": "publish",
+        "post_type": "estate_property",
+        "post_date_gmt": "2025-10-20 12:53:57"
+    },
+    "meta": {
+        "original_author": [
+            "1"
+        ],
+        "wpestate_property_gallery": [
+            "a:2:{i:0;s:5:\"33911\";i:1;s:5:\"33912\";}"
+        ],
+        "_realt_ps_external_id": [
+            "Prodej bytu 4+1, 85 m², Praha, ulice Kopřivnická, okres Praha - ČESKÉREALITY.cz inzerce realit { \"imports\": { \"app\": \"\/assets\/app-q7DpY0g.js\", \"\/assets\/styles\/app.css\": \"data:application\/javascript,\", \"\/assets\/bootstrap.js\": \"\/assets\/bootstrap--rhe-43.js\", \"@symfony\/stimulus-bundle\": \"\/assets\/@symfony\/stimulus-bundle\/loader-V1GtHuK.js\", \"@hotwired\/stimulus\": \"\/assets\/vendor\/@hotwired\/stimulus\/stimulus.index-S4zNcea.js\", \"\/assets\/@symfony\/stimulus-bundle\/controllers.js\": \"\/assets\/@symfony\/stimulus-bundle\/controllers-dSbvwfL.js\", \"\/assets\/controllers\/hello_controller.js\": \"\/assets\/controllers\/hello_controller-VYgvytJ.js\", \"vue\": \"\/assets\/vendor\/vue\/vue.index-dlI_HMV.js\", \"@vue\/runtime-dom\": \"\/assets\/vendor\/@vue\/runtime-dom\/runtime-dom.index-jvvmNz2.js\", \"@vue\/runtime-core\": \"\/assets\/vendor\/@vue\/runtime-core\/runtime-core.index-iSgGrNa.js\", \"@vue\/shared\": \"\/assets\/vendor\/@vue\/shared\/shared.index-pYaa13J.js\", \"@vue\/reactivity\": \"\/assets\/vendor\/@vue\/reactivity\/reactivity.index-sEVsmOf.js\", \"webpush\": \"\/assets\/webpush-90uvZKr.js\", \"styles\/app.css\": \"data:application\/javascript,document.head.appendChildObject.assigndocument.createElementlinkrelstylesheethrefassetsstylesapp-eFjvAR6.css\", \"bootstrap.js\": \"\/assets\/bootstrap--rhe-43.js\" } } if (!HTMLScriptElement.supports || !HTMLScriptElement.supports('importmap')) (function () { const script = document.createElement('script'); script.src = 'https:\/\/ga.jspm.io\/npm:es-module-shims@1.10.0\/dist\/es-module-shims.js'; script.setAttribute('crossorigin', 'anonymous'); script.setAttribute('integrity', 'sha384-ie1x72Xck445i0j4SlNJ5W5iGeL3Dpa0zD48MZopgWsjNB\/lt60SuG1iduZGNnJn'); document.head.appendChild(script); })(); import 'app'; :root {--logo-print: url('\/build\/images\/svg\/logo\/logo.svg')} window.dataLayer = window.dataLayer || []; window.dataLayer.push({\"id_sluzby\":300,\"id_nemovitosti\":3523302,\"typ_operace\":1,\"zahranicni_nemovitost\":0,\"id_firmy\":119266,\"id_maklere\":56870,\"id_zeme\":203,\"okres\":3100,\"id_okresu\":3100,\"typ_nemovitosti\":200,\"typ_ceny\":1,\"price\":9300000,\"priceCurrency\":\"CZK\"}); (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src= 'https:\/\/www.googletagmanager.com\/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f); })(window,document,'script','dataLayer','GTM-PLQBTHN');"
+        ],
+        "_thumbnail_id": [
+            "33911"
+        ],
+        "post_thumbnail_id": [
+            "33911"
+        ],
+        "property_images": [
+            "a:2:{i:0;i:33911;i:1;i:33912;}"
+        ],
+        "property_image_gallery": [
+            "33911,33912"
+        ],
+        "image_to_attach": [
+            "33911,33912,"
+        ],
+        "_realt_ps_gallery_ids": [
+            "33911,33912"
+        ],
+        "property_price": [
+            "9300000"
+        ],
+        "prop_price": [
+            "9300000"
+        ],
+        "property_price_before_label": [
+            ""
+        ],
+        "property_label_before": [
+            ""
+        ],
+        "property_price_after_label": [
+            ""
+        ],
+        "property_address": [
+            "Kopřivnická, Praha"
+        ],
+        "property_latitude": [
+            "50.139520555556"
+        ],
+        "property_longitude": [
+            "14.515162222222"
+        ],
+        "wpestate_total_views": [
+            "6"
+        ],
+        "wpestate_detailed_views": [
+            "a:1:{s:16:\"October 20, 2025\";i:6;}"
+        ],
+        "_elementor_page_assets": [
+            "a:0:{}"
+        ]
+    },
+    "terms": {
+        "property_city": [
+            {
+                "term_id": 211,
+                "name": "Praha",
+                "slug": "praha"
+            }
+        ],
+        "property_area": [
+            {
+                "term_id": 212,
+                "name": "Praha",
+                "slug": "praha"
+            }
+        ]
+    }
+}

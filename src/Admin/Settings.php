@@ -15,6 +15,7 @@ class Settings {
 		\add_settings_field( 'max_runtime', \__( 'Max Run Time (seconds)', 'realt-ps' ), [ $this, 'field_max_runtime' ], 'realt_ps_import', 'realt_ps_import_main' );
 		\add_settings_field( 'image_timeout', \__( 'Image Timeout (seconds)', 'realt-ps' ), [ $this, 'field_image_timeout' ], 'realt_ps_import', 'realt_ps_import_main' );
 		\add_settings_field( 'max_images', \__( 'Max Images Per Post', 'realt-ps' ), [ $this, 'field_max_images' ], 'realt_ps_import', 'realt_ps_import_main' );
+		\add_settings_field( 'max_items', \__( 'Max Properties per Run', 'realt-ps' ), [ $this, 'field_max_items' ], 'realt_ps_import', 'realt_ps_import_main' );
 		\add_settings_field( 'mode', \__( 'Mode', 'realt-ps' ), [ $this, 'field_mode' ], 'realt_ps_import', 'realt_ps_import_main' );
 
 		// Geocoding Tab
@@ -93,6 +94,7 @@ class Settings {
 		$clean['max_runtime'] = max( 30, min( 900, (int) ( $input['max_runtime'] ?? 300 ) ) );
 		$clean['image_timeout'] = max( 5, min( 120, (int) ( $input['image_timeout'] ?? 25 ) ) );
 		$clean['max_images'] = max( 1, min( 15, (int) ( $input['max_images'] ?? 6 ) ) );
+		$clean['max_items'] = max( 1, min( 200, isset( $input['max_items'] ) ? (int) $input['max_items'] : 5 ) );
 		return $clean;
 	}
 	public function field_auto_enabled() {
@@ -193,6 +195,14 @@ class Settings {
 		?>
 		<input type="number" min="1" max="60" name="realt_ps_scraping[rate_limit]" value="<?php echo \esc_attr( (int) ( $opts['rate_limit'] ?? 10 ) ); ?>" />
 		<p class="description"><?php \esc_html_e( 'Requests per minute per domain.', 'realt-ps' ); ?></p>
+		<?php
+	}
+
+	public function field_max_items() {
+		$opts = \get_option( 'realt_ps_import', [ 'max_items' => 20 ] );
+		?>
+		<input type="number" min="1" max="200" name="realt_ps_import[max_items]" value="<?php echo \esc_attr( (int) ( $opts['max_items'] ?? 20 ) ); ?>" />
+		<p class="description"><?php \esc_html_e( 'Upper cap of properties to fetch per run.', 'realt-ps' ); ?></p>
 		<?php
 	}
 

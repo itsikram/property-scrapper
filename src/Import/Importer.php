@@ -20,6 +20,13 @@ class Importer {
 			$items = [];
 			if ( 'scraping' === $mode ) {
 				$items = ( new CeskeRealityScraper() )->fetch();
+				// Enforce per-run item cap from scraping settings as an extra safety net
+				$scrapeOpts = \get_option( 'realt_ps_scraping', [] );
+				$maxItems = max( 1, (int) ( $scrapeOpts['max_items'] ?? 20 ) );
+				if ( count( $items ) > $maxItems ) {
+					$logger->log_info( 'cap_items_applied', [ 'before' => count( $items ), 'after' => $maxItems ] );
+					$items = array_slice( $items, 0, $maxItems );
+				}
 			}
 			// Enforce global runtime budget before heavy work like media downloads
 			if ( ( microtime( true ) - $startedAt ) > $maxSeconds ) {
@@ -105,14 +112,36 @@ class Importer {
 		if ( ! is_array( $images ) || empty( $images ) ) { return; }
 		$attachmentIds = Media::download_and_attach_images( $post_id, $images );
 		if ( $attachmentIds ) {
-			Media::set_featured_if_missing( $post_id, $attachmentIds );
+			// Always set first image as featured thumbnail
+			$featuredId = (int) $attachmentIds[0];
+			if ( $featuredId > 0 ) {
+				\set_post_thumbnail( $post_id, $featuredId );
+				// Ensure both common keys exist for compatibility
+				\update_post_meta( $post_id, '_thumbnail_id', $featuredId );
+				\update_post_meta( $post_id, 'post_thumbnail_id', $featuredId );
+
+				// if ( \post_type_supports( 'estate_property', 'thumbnail' ) ) {
+				// } else {
+				// 	\update_post_meta( $post_id, '_thumbnail_id', $featuredId );
+				// }
+			}
 			// Store gallery IDs for theme/plugins; common meta keys used by WP Residence
-			\update_post_meta( $post_id, 'property_images', array_map( 'intval', $attachmentIds ) );
-			// WP Residence expects a comma separated string in `property_image_gallery`
-			\update_post_meta( $post_id, 'property_image_gallery', implode( ',', array_map( 'intval', $attachmentIds ) ) );
-			\update_post_meta( $post_id, 'wpestate_property_gallery', implode( ',', array_map( 'intval', $attachmentIds ) ) );
+			$idsInt = array_map( 'intval', $attachmentIds );
+			$idsStr = array_map( 'strval', $attachmentIds );
+			\update_post_meta( $post_id, 'property_images', $idsInt );
+			// WP Residence uses both a CSV string and a serialized array in different contexts
+			\update_post_meta( $post_id, 'property_image_gallery', implode( ',', $idsInt ) );
+			\update_post_meta( $post_id, 'wpestate_property_gallery', $idsStr ); // array so WP serializes it
+			\update_post_meta( $post_id, 'image_to_attach', implode( ',', $idsInt ) . ',' ); // mirrors editor save
 			// Also keep a CSV version for convenience/export
-			\update_post_meta( $post_id, '_realt_ps_gallery_ids', implode( ',', array_map( 'intval', $attachmentIds ) ) );
+			\update_post_meta( $post_id, '_realt_ps_gallery_ids', implode( ',', $idsInt ) );
+			// Re-save post to trigger theme hooks (e.g., WP Residence) that run on save_post
+			// and expect gallery meta to already be present. This mirrors the manual save fix.
+			\clean_post_cache( $post_id );
+			\do_action( 'save_post_estate_property', $post_id, \get_post( $post_id ), true );
+			\do_action( 'save_post', $post_id, \get_post( $post_id ), true );
+			\wp_update_post( [ 'ID' => $post_id ] );
+			\clean_post_cache( $post_id );
 		}
 	}
 
@@ -144,6 +173,105 @@ class Importer {
 		$areaName = $areaSlug ? ucfirst( str_replace( '-', ' ', $areaSlug ) ) : '';
 		if ( $citySlug ) { $this->ensure_term_and_assign( $post_id, 'property_city', $cityName ?: 'Praha', $citySlug ); }
 		if ( $areaSlug ) { $this->ensure_term_and_assign( $post_id, 'property_area', $areaName, $areaSlug ); }
+
+		// Populate additional defaults matching WP Residence admin save so frontend renders immediately
+		$defaults = [
+			'local_show_hide_price' => 'global',
+			'property_label' => '',
+			'property_second_price' => '',
+			'property_label_before_second_price' => '',
+			'property_second_price_label' => '',
+			'property_year_tax' => '0',
+			'property_hoa' => '0',
+			'property_size' => '0',
+			'property_lot_size' => '0',
+			'property_rooms' => '0',
+			'property_bedrooms' => '0',
+			'property_bathrooms' => '0',
+			'owner_notes' => '',
+			'property_internal_id' => '',
+			'prop_featured' => '0',
+			'property_theme_slider' => '0',
+			'embed_video_type' => 'vimeo',
+			'embed_video_id' => '',
+			'property_custom_video' => '',
+			'embed_virtual_tour' => '',
+			'mls' => '',
+			'property-garage' => '',
+			'property-year' => '',
+			'property-garage-size' => '',
+			'property-date' => '',
+			'property-basement' => '',
+			'property-external-construction' => '',
+			'property-roofing' => '',
+			'exterior-material' => '',
+			'structure-type' => 'Not Available',
+			'stories-number' => 'Not Available',
+			'property_zip' => '',
+			'property_country' => 'Czech Republic',
+			'page_custom_zoom' => '16',
+			'google_camera_angle' => '0',
+			'property_google_view' => '',
+			'property_hide_map_marker' => '',
+			'energy_index' => '',
+			'energy_class' => '',
+			'co2_index' => '',
+			'co2_class' => '',
+			'renew_energy_index' => '',
+			'building_energy_index' => '',
+			'epc_current_rating' => '',
+			'epc_potential_rating' => '',
+			'property_agent' => '',
+			'property_user' => '',
+			'use_floor_plans' => '0',
+			'property_has_subunits' => '',
+			'property_subunits_list_manual' => '',
+			'sidebar_agent_option' => 'global',
+			'local_pgpr_slider_type' => 'global',
+			'local_pgpr_content_type' => 'global',
+			'property_page_desing_local' => '',
+			'header_transparent' => 'global',
+			'topbar_transparent' => 'global',
+			'topbar_border_transparent' => 'global',
+			'page_show_adv_search' => 'global',
+			'page_use_float_search' => 'global',
+			'page_wp_estate_float_form_top' => '',
+			'sidebar_option' => 'global',
+			'sidebar_select' => '',
+			'header_type' => '0',
+			'min_height' => '0',
+			'max_height' => '0',
+			'keep_min' => '',
+			'keep_max' => '',
+			'page_custom_image' => '',
+			'page_header_image_full_screen' => 'no',
+			'page_header_image_back_type' => 'cover',
+			'page_header_title_over_image' => '',
+			'page_header_subtitle_over_image' => '',
+			'page_header_image_height' => '',
+			'page_header_overlay_color' => '',
+			'page_header_overlay_val' => '',
+			'rev_slider' => '',
+			'page_custom_video' => '',
+			'page_custom_video_webbm' => '',
+			'page_custom_video_ogv' => '',
+			'page_custom_video_cover_image' => '',
+			'page_header_video_full_screen' => 'no',
+			'page_header_title_over_video' => '',
+			'page_header_subtitle_over_video' => '',
+			'page_header_video_height' => '',
+			'page_header_overlay_color_video' => '',
+			'page_header_overlay_val_video' => '',
+		];
+		foreach ( $defaults as $meta_key => $meta_value ) {
+			\update_post_meta( $post_id, $meta_key, $meta_value );
+		}
+		// Provide a basic hidden address similar to theme's computed field
+		if ( $address || $city ) {
+			$hidden = trim( $address );
+			if ( $city ) { $hidden .= ( $hidden ? ', ' : '' ) . $city; }
+			\update_post_meta( $post_id, 'hidden_address', $hidden );
+		}
 	}
 
 	private function ensure_term_and_assign( int $post_id, string $taxonomy, string $name, string $slug ): void {
