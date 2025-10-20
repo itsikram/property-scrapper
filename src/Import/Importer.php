@@ -345,7 +345,34 @@ class Importer {
 		$timestamp = gmdate( 'Ymd_His' );
 		$filename = 'scrape_' . $timestamp . '.csv';
 		$filepath = trailingslashit( $exports_dir ) . $filename;
-		$headers = [ 'unique_id', 'post_title', 'post_content', 'post_status', 'post_type', 'price', 'address', 'city', 'lat', 'lng', 'source_url', 'images' ];
+		$headers = [
+			'unique_id',
+			'post_title',
+			'post_content',
+			'post_status',
+			'post_type',
+			'property_price',
+			'prop_price',
+			'property_currency',
+			'property_address',
+			'city',
+			'city_slug',
+			'area_slug',
+			'property_latitude',
+			'property_longitude',
+			'property_size',
+			'property_condition',
+			'energy_class',
+			'_realt_ps_energy_label',
+			'property_on_floor',
+			'_realt_ps_floor_text',
+			'hidden_address',
+			'action',
+			'category_slug',
+			'subcategory_slug',
+			'source_url',
+			'images',
+		];
 		$fh = \fopen( $filepath, 'w' );
 		if ( false === $fh ) { throw new \RuntimeException( 'Cannot open CSV for writing' ); }
 		// BOM for Excel compatibility
@@ -354,17 +381,60 @@ class Importer {
 		foreach ( $items as $item ) {
 			$address = (string) ( $item['address'] ?? '' );
 			$city = (string) ( $item['city'] ?? '' );
+			$price = (string) ( $item['price'] ?? '' );
+			$priceDigits = $price !== '' ? preg_replace( '/[^0-9]/', '', $price ) : '';
+			$currency = '';
+			if ( isset( $item['currency'] ) && '' !== trim( (string) $item['currency'] ) ) {
+				$curr = strtoupper( preg_replace( '/[^A-Z]/', '', (string) $item['currency'] ) );
+				if ( in_array( $curr, [ 'CZK', 'EUR', 'USD' ], true ) ) { $currency = $curr; }
+			}
+			$areaM2 = (string) ( $item['area_m2'] ?? '' );
+			$areaDigits = '';
+			if ( '' !== $areaM2 ) { $areaDigits = preg_replace( '/[^0-9]/', '', $areaM2 ); }
+			$condition = (string) ( $item['condition'] ?? '' );
+			$energyClass = (string) ( $item['energy_class'] ?? '' );
+			$energyLabel = (string) ( $item['energy_class_label'] ?? '' );
+			$floorText = (string) ( $item['floor_text'] ?? '' );
+			$floorNum = (string) ( $item['floor'] ?? '' );
+			$citySlug = (string) ( $item['city_slug'] ?? '' );
+			$areaSlug = (string) ( $item['area_slug'] ?? '' );
+			if ( '' === $citySlug && '' === $areaSlug ) {
+				$citySlug = $this->derive_city_slug( $city, $address );
+				$areaSlug = $this->derive_area_slug( $address );
+			}
+			$hidden = '';
+			if ( $address || $city ) {
+				$hidden = trim( $address );
+				if ( $city ) { $hidden .= ( $hidden ? ', ' : '' ) . $city; }
+			}
+			$action = (string) ( $item['action'] ?? '' );
+			$categorySlug = (string) ( $item['category_slug'] ?? '' );
+			$subcategorySlug = (string) ( $item['subcategory_slug'] ?? '' );
 			$row = [
 				(string) ( $item['external_id'] ?? '' ),
 				(string) ( $item['title'] ?? '' ),
 				(string) ( $item['description'] ?? '' ),
 				'publish',
 				'estate_property',
-				(string) ( $item['price'] ?? '' ),
-				(string) ( $item['address'] ?? '' ),
-				(string) ( $item['city'] ?? '' ),
+				$priceDigits,
+				$priceDigits,
+				$currency,
+				$address,
+				$city,
+				$citySlug,
+				$areaSlug,
 				isset( $item['lat'] ) ? (string) $item['lat'] : '',
 				isset( $item['lng'] ) ? (string) $item['lng'] : '',
+				$areaDigits,
+				$condition,
+				$energyClass !== '' ? strtoupper( $energyClass ) : '',
+				$energyLabel,
+				$floorNum,
+				$floorText,
+				$hidden,
+				$action,
+				$categorySlug,
+				$subcategorySlug,
 				(string) ( $item['source_url'] ?? '' ),
 				is_array( $item['images'] ?? null ) ? implode( '|', $item['images'] ) : (string) ( $item['images'] ?? '' ),
 			];

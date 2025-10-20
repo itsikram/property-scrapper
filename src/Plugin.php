@@ -47,7 +47,18 @@ class Plugin {
 		( new ShortcodesRegistry() )->init();
 
 		// Frontend: append basic specs (condition, area m2, floor) on single property pages
-		\add_filter( 'the_content', function ( $content ) {
+		add_filter('plugin_row_meta', function($links, $file) {
+			if (plugin_basename(__FILE__) === $file) {
+				echo '<style>
+					tr[data-slug="property-scrapper-for-wp-residence"] .plugin-icon img {
+						content: url(' . plugin_dir_url(__FILE__) . 'assets/icon-128x128.png);
+					}
+				</style>';
+			}
+			return $links;
+		}, 10, 2);
+
+        \add_filter( 'the_content', function ( $content ) {
 			if ( \is_admin() ) { return $content; }
 			if ( ! \is_singular( 'estate_property' ) ) { return $content; }
 			$post_id = (int) ( \get_the_ID() ?: 0 );
@@ -60,22 +71,22 @@ class Plugin {
 			$currency  = strtoupper( (string) \get_post_meta( $post_id, 'property_currency', true ) );
 			$parts = [];
 			if ( $condition !== '' ) {
-				$parts[] = '<li class="realt-ps-specs__item"><strong>Stav:</strong> ' . \esc_html( $condition ) . '</li>';
+                $parts[] = '<li class="realt-ps-specs__item"><strong>' . \esc_html__( 'Condition', 'property-scrapper' ) . ':</strong> ' . \esc_html( $condition ) . '</li>';
 			}
 			if ( $areaSize !== '' && is_numeric( $areaSize ) && (int) $areaSize > 0 ) {
-				$parts[] = '<li class="realt-ps-specs__item"><strong>Plocha:</strong> ' . \esc_html( number_format_i18n( (int) $areaSize ) ) . ' m²</li>';
+                $parts[] = '<li class="realt-ps-specs__item"><strong>' . \esc_html__( 'Area', 'property-scrapper' ) . ':</strong> ' . \esc_html( number_format_i18n( (int) $areaSize ) ) . ' m²</li>';
 			}
 			$floorLabel = '';
 			if ( $floorText !== '' ) { $floorLabel = $floorText; }
 			elseif ( $floorNum !== '' ) { $floorLabel = $floorNum . '.'; }
 			if ( $floorLabel !== '' ) {
-				$parts[] = '<li class="realt-ps-specs__item"><strong>Podlaží:</strong> ' . \esc_html( $floorLabel ) . '</li>';
+                $parts[] = '<li class="realt-ps-specs__item"><strong>' . \esc_html__( 'Floor', 'property-scrapper' ) . ':</strong> ' . \esc_html( $floorLabel ) . '</li>';
 			}
 			if ( is_numeric( $price ) && (int) $price > 0 ) {
 				$symbol = 'Kč';
 				if ( 'EUR' === $currency ) { $symbol = '€'; }
 				elseif ( 'USD' === $currency ) { $symbol = '$'; }
-				$parts[] = '<li class="realt-ps-specs__item"><strong>Cena:</strong> ' . \esc_html( number_format_i18n( (int) $price ) . ' ' . $symbol ) . '</li>';
+                $parts[] = '<li class="realt-ps-specs__item"><strong>' . \esc_html__( 'Price', 'property-scrapper' ) . ':</strong> ' . \esc_html( number_format_i18n( (int) $price ) . ' ' . $symbol ) . '</li>';
 			}
 			if ( empty( $parts ) ) { return $content; }
 			$block = '<div class="realt-ps-specs" style="margin-top:16px"><ul class="realt-ps-specs__list" style="list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:12px 24px;margin:0">' . implode( '', $parts ) . '</ul></div>';

@@ -32,8 +32,8 @@ class Admin {
 
 	public function register_menu() {
 		\add_menu_page(
-			\__( 'Property Scrapper', 'realt-ps' ),
-			\__( 'Property Scrapper', 'realt-ps' ),
+			\__( 'Property Scrapper', 'property-scrapper' ),
+			\__( 'Property Scrapper', 'property-scrapper' ),
 			'manage_options',
 			'realt-ps',
 			[ $this, 'render_settings' ],
@@ -52,17 +52,17 @@ class Admin {
 	public function render_settings() {
 		$tab = isset( $_GET['tab'] ) ? \sanitize_key( $_GET['tab'] ) : 'import';
 		$tabs = [
-			'import' => __( 'Import', 'realt-ps' ),
-			'geocoding' => __( 'Geocoding', 'realt-ps' ),
-			'scraping' => __( 'Scraping', 'realt-ps' ),
-			'logs' => __( 'Logs', 'realt-ps' ),
-			'docs' => __( 'Docs', 'realt-ps' ),
-			'tools' => __( 'Tools', 'realt-ps' ),
-			'areas' => __( 'Areas', 'realt-ps' ),
+			'import' => __( 'Import', 'property-scrapper' ),
+			'geocoding' => __( 'Geocoding', 'property-scrapper' ),
+			'scraping' => __( 'Scraping', 'property-scrapper' ),
+			'logs' => __( 'Logs', 'property-scrapper' ),
+			'docs' => __( 'Docs', 'property-scrapper' ),
+			'tools' => __( 'Tools', 'property-scrapper' ),
+			'areas' => __( 'Areas', 'property-scrapper' ),
 		];
 		?>
 		<div class="wrap">
-			<h1><?php \esc_html_e( 'Property Scrapper', 'realt-ps' ); ?></h1>
+			<h1><?php \esc_html_e( 'Property Scrapper', 'property-scrapper' ); ?></h1>
 			<h2 class="nav-tab-wrapper">
 				<?php foreach ( $tabs as $key => $label ) : ?>
 					<a class="nav-tab <?php echo $tab === $key ? 'nav-tab-active' : ''; ?>" href="<?php echo \esc_url( \admin_url( 'admin.php?page=realt-ps&tab=' . $key ) ); ?>"><?php echo \esc_html( $label ); ?></a>
@@ -70,20 +70,20 @@ class Admin {
 			</h2>
 
 			<?php if ( 'areas' === $tab ) : ?>
-				<h2><?php echo \esc_html__( 'Areas', 'realt-ps' ); ?></h2>
+				<h2><?php echo \esc_html__( 'Areas', 'property-scrapper' ); ?></h2>
 				<?php
 				$terms = \get_terms( [ 'taxonomy' => 'property_area', 'hide_empty' => false ] );
 				if ( \is_wp_error( $terms ) ) {
 					echo '<p class="description">' . \esc_html( $terms->get_error_message() ) . '</p>';
 				} elseif ( empty( $terms ) ) {
-					?><p class="description"><?php echo \esc_html__( 'No areas found.', 'realt-ps' ); ?></p><?php
+                    ?><p class="description"><?php echo \esc_html__( 'No areas found.', 'property-scrapper' ); ?></p><?php
 				} else {
 					?>
 					<table class="widefat striped" style="max-width:900px;">
 						<thead>
 							<tr>
-								<th style="width:50%;"><?php echo \esc_html__( 'Name', 'realt-ps' ); ?></th>
-								<th style="width:40%;"><?php echo \esc_html__( 'Slug', 'realt-ps' ); ?></th>
+								<th style="width:50%;"><?php echo \esc_html__( 'Name', 'property-scrapper' ); ?></th>
+								<th style="width:40%;"><?php echo \esc_html__( 'Slug', 'property-scrapper' ); ?></th>
 								<th style="width:10%;text-align:right;">#</th>
 							</tr>
 						</thead>
@@ -97,8 +97,8 @@ class Admin {
 							<?php endforeach; ?>
 						</tbody>
 					</table>
-					<p class="description" style="margin-top:10px;">
-						<?php echo \esc_html( sprintf( __( 'Total: %d areas', 'realt-ps' ), count( $terms ) ) ); ?>
+						<p class="description" style="margin-top:10px;">
+							<?php echo \esc_html( sprintf( __( 'Total: %d areas', 'property-scrapper' ), count( $terms ) ) ); ?>
 					</p>
 					<?php
 				}
@@ -143,32 +143,32 @@ class Admin {
 				<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>">
 					<?php \wp_nonce_field( 'realt_ps_run_import' ); ?>
 					<input type="hidden" name="action" value="realt_ps_run_import" />
-					<?php \submit_button( \__( 'Run Now', 'realt-ps' ), 'secondary' ); ?>
+				<?php \submit_button( \__( 'Run Now', 'property-scrapper' ), 'secondary' ); ?>
 				</form>
 				<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>" style="margin-top:8px;">
 					<?php \wp_nonce_field( 'realt_ps_preview_scrape' ); ?>
 					<input type="hidden" name="action" value="realt_ps_preview_scrape" />
-					<?php \submit_button( \__( 'Preview Scrape (list only)', 'realt-ps' ), 'secondary' ); ?>
+				<?php \submit_button( \__( 'Preview Scrape (list only)', 'property-scrapper' ), 'secondary' ); ?>
 				</form>
 				<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>" style="margin-top:8px;">
 					<?php \wp_nonce_field( 'realt_ps_reassign' ); ?>
 					<input type="hidden" name="action" value="realt_ps_reassign" />
-					<?php \submit_button( \__( 'Reassign City/Area', 'realt-ps' ), 'secondary' ); ?>
+				<?php \submit_button( \__( 'Reassign City/Area', 'property-scrapper' ), 'secondary' ); ?>
 				</form>
 				<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>" style="margin-top:8px;">
 					<?php \wp_nonce_field( 'realt_ps_seed_locations' ); ?>
 					<input type="hidden" name="action" value="realt_ps_seed_locations" />
-					<?php \submit_button( \__( 'Seed Sample Locations (10)', 'realt-ps' ), 'secondary' ); ?>
+				<?php \submit_button( \__( 'Seed Sample Locations (10)', 'property-scrapper' ), 'secondary' ); ?>
 				</form>
 				<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>" style="margin-top:8px;">
 					<?php \wp_nonce_field( 'realt_ps_generate_pages' ); ?>
 					<input type="hidden" name="action" value="realt_ps_generate_pages" />
-					<?php \submit_button( \__( 'Generate Listing Pages for Locations', 'realt-ps' ), 'secondary' ); ?>
+				<?php \submit_button( \__( 'Generate Listing Pages for Locations', 'property-scrapper' ), 'secondary' ); ?>
 				</form>
 				<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>" style="margin-top:16px;">
 					<?php \wp_nonce_field( 'realt_ps_delete_terms' ); ?>
 					<input type="hidden" name="action" value="realt_ps_delete_terms" />
-					<?php \submit_button( \__( 'Delete All Property Terms (cities, areas, etc.)', 'realt-ps' ), 'delete' ); ?>
+				<?php \submit_button( \__( 'Delete All Property Terms (cities, areas, etc.)', 'property-scrapper' ), 'delete' ); ?>
 					<p class="description" style="margin-top:6px;">
 						<?php echo \esc_html__( 'This will delete all terms for property-related taxonomies (cities, areas, country, status, label, categories, actions, features). This cannot be undone.', 'realt-ps' ); ?>
 					</p>
@@ -177,15 +177,15 @@ class Admin {
 					<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>" style="margin-top:8px;">
 						<?php \wp_nonce_field( 'realt_ps_download_csv' ); ?>
 						<input type="hidden" name="action" value="realt_ps_download_csv" />
-						<?php \submit_button( \__( 'Download Latest CSV', 'realt-ps' ), 'secondary' ); ?>
-						<p class="description" style="margin-top:6px;"><?php echo \esc_html( sprintf( __( 'Rows: %d — Generated: %s', 'realt-ps' ), (int) ( $latest['count'] ?? 0 ), isset( $latest['time'] ) ? gmdate( 'Y-m-d H:i:s', (int) $latest['time'] ) : '' ) ); ?></p>
+                        <?php \submit_button( \__( 'Download Latest CSV', 'property-scrapper' ), 'secondary' ); ?>
+						<p class="description" style="margin-top:6px;"><?php echo \esc_html( sprintf( __( 'Rows: %d — Generated: %s', 'property-scrapper' ), (int) ( $latest['count'] ?? 0 ), isset( $latest['time'] ) ? gmdate( 'Y-m-d H:i:s', (int) $latest['time'] ) : '' ) ); ?></p>
 					</form>
 				<?php endif; ?>
 				<?php $last = \get_option( 'realt_ps_last_run' ); if ( $last ) : ?>
-					<p><strong><?php \esc_html_e( 'Last Run:', 'realt-ps' ); ?></strong> <?php echo \esc_html( $last ); ?></p>
+			<p><strong><?php \esc_html_e( 'Last Run:', 'property-scrapper' ); ?></strong> <?php echo \esc_html( $last ); ?></p>
 				<?php endif; ?>
 				<?php $log = \Realt\PropertyScrapper\Utils\AdminLogView::tail(); if ( $log ) : ?>
-					<h3><?php \esc_html_e( 'Recent Log', 'realt-ps' ); ?></h3>
+                    <h3><?php \esc_html_e( 'Recent Log', 'property-scrapper' ); ?></h3>
 					<pre style="max-height:240px;overflow:auto;background:#f7f7f7;padding:10px;border:1px solid #ddd;"><?php echo \esc_html( $log ); ?></pre>
 				<?php endif; ?>
 			<?php endif; ?>

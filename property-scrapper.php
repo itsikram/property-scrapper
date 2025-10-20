@@ -1,12 +1,18 @@
 <?php
 /**
  * Plugin Name: Property Scrapper for WP Residence
+ * Plugin URI: https://wpresidence.com/
  * Description: Automated import, scraping fallback, and location management for WP Residence (Prague listings).
  * Version: 1.1.0
  * Author: Programmer Ikram
- * Author URI: https://programmerikram.com
+ * Author URI: https://facebook.com/Programmerikram
  * License: GPLv2 or later
- * Text Domain: realt-ps
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Requires at least: 5.8
+ * Requires PHP: 7.4
+ * Tested up to: 6.6
+ * Text Domain: property-scrapper
+ * Domain Path: /languages
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -49,7 +55,10 @@ register_deactivation_hook( __FILE__, function () {
 	\Realt\PropertyScrapper\Cron\Scheduler::deactivate();
 } );
 
+
 add_action( 'plugins_loaded', function () {
+	// i18n
+	load_plugin_textdomain( 'property-scrapper', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	\Realt\PropertyScrapper\Plugin::instance()->init();
 } );
 

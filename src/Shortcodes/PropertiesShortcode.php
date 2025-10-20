@@ -125,7 +125,7 @@ class PropertiesShortcode {
 					'next_text' => '»',
 				] );
 				if ( is_array( $pagination_links ) && ! empty( $pagination_links ) ) : ?>
-					<nav class="realt-ps-pagination" aria-label="<?php echo esc_attr__( 'Properties pagination', 'realt-ps' ); ?>">
+                    <nav class="realt-ps-pagination" aria-label="<?php echo esc_attr__( 'Properties pagination', 'property-scrapper' ); ?>">
 						<ul>
 							<?php foreach ( $pagination_links as $link ) : ?>
 								<li><?php echo $link; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></li>
@@ -134,7 +134,7 @@ class PropertiesShortcode {
 					</nav>
 				<?php endif; ?>
 			<?php else : ?>
-				<p class="realt-ps-properties__empty"><?php echo esc_html__( 'No properties found.', 'realt-ps' ); ?></p>
+                <p class="realt-ps-properties__empty"><?php echo esc_html__( 'No properties found.', 'property-scrapper' ); ?></p>
 			<?php endif; ?>
 		</div>
 		<?php

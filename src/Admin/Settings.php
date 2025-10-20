@@ -52,12 +52,12 @@ class Settings {
 
 	public function section_preview() {
 		$res = \get_transient( 'realt_ps_preview' );
-		if ( ! $res ) { echo '<p>' . \esc_html__( 'Use Preview Scrape to test selectors.', 'realt-ps' ) . '</p>'; return; }
+        if ( ! $res ) { echo '<p>' . \esc_html__( 'Use Preview Scrape to test selectors.', 'property-scrapper' ) . '</p>'; return; }
 		if ( empty( $res['ok'] ) ) {
 			echo '<p style="color:#b00">' . \esc_html( $res['error'] ?? 'Unknown error' ) . '</p>';
 			return;
 		}
-		echo '<p>' . \esc_html( sprintf( __( 'Found %d list items. Showing up to 5 samples:', 'realt-ps' ), (int) ( $res['count'] ?? 0 ) ) ) . '</p>';
+        echo '<p>' . \esc_html( sprintf( __( 'Found %d list items. Showing up to 5 samples:', 'property-scrapper' ), (int) ( $res['count'] ?? 0 ) ) ) . '</p>';
 		echo '<ol id="preview">';
 		foreach ( (array) ( $res['samples'] ?? [] ) as $s ) {
 			echo '<li>' . \esc_html( ($s['title'] ?? '') . ' — ' . ($s['url'] ?? '') ) . '</li>';
@@ -85,7 +85,7 @@ class Settings {
 		?>
 		<label>
 			<input type="checkbox" name="realt_ps_import[debug_mode]" value="1" <?php checked( $val, 1 ); ?> />
-			<?php \esc_html_e( 'When enabled, do not match/validate areas via Areas GeoJSON or Street→Area CSV during assignment.', 'realt-ps' ); ?>
+            <?php \esc_html_e( 'When enabled, do not match/validate areas via Areas GeoJSON or Street→Area CSV during assignment.', 'property-scrapper' ); ?>
 		</label>
 		<?php
 	}
@@ -95,7 +95,7 @@ class Settings {
 		?>
 		<label>
 			<input type="checkbox" name="realt_ps_import[auto_enabled]" value="1" <?php checked( $val, 1 ); ?> />
-			<?php \esc_html_e( 'Automatically run sync on schedule', 'realt-ps' ); ?>
+            <?php \esc_html_e( 'Automatically run sync on schedule', 'property-scrapper' ); ?>
 		</label>
 		<?php
 	}
@@ -152,7 +152,7 @@ class Settings {
 		$opts = \get_option( 'realt_ps_import', [ 'cron_interval' => 4 ] );
 		?>
 		<input type="number" min="2" max="24" name="realt_ps_import[cron_interval]" value="<?php echo \esc_attr( (int) ( $opts['cron_interval'] ?? 4 ) ); ?>" />
-		<p class="description"><?php \esc_html_e( 'How often to run auto-sync (hours).', 'realt-ps' ); ?></p>
+        <p class="description"><?php \esc_html_e( 'How often to run auto-sync (hours).', 'property-scrapper' ); ?></p>
 		<?php
 	}
 
@@ -160,7 +160,7 @@ class Settings {
 		$opts = \get_option( 'realt_ps_import', [ 'max_runtime' => 300 ] );
 		?>
 		<input type="number" min="30" max="900" name="realt_ps_import[max_runtime]" value="<?php echo \esc_attr( (int) ( $opts['max_runtime'] ?? 300 ) ); ?>" />
-		<p class="description"><?php \esc_html_e( 'Hard cap for a single run to avoid timeouts.', 'realt-ps' ); ?></p>
+        <p class="description"><?php \esc_html_e( 'Hard cap for a single run to avoid timeouts.', 'property-scrapper' ); ?></p>
 		<?php
 	}
 
@@ -168,7 +168,7 @@ class Settings {
 		$opts = \get_option( 'realt_ps_import', [ 'image_timeout' => 25 ] );
 		?>
 		<input type="number" min="5" max="120" name="realt_ps_import[image_timeout]" value="<?php echo \esc_attr( (int) ( $opts['image_timeout'] ?? 25 ) ); ?>" />
-		<p class="description"><?php \esc_html_e( 'Per-image download timeout.', 'realt-ps' ); ?></p>
+        <p class="description"><?php \esc_html_e( 'Per-image download timeout.', 'property-scrapper' ); ?></p>
 		<?php
 	}
 
@@ -176,7 +176,7 @@ class Settings {
 		$opts = \get_option( 'realt_ps_import', [ 'max_images' => 6 ] );
 		?>
 		<input type="number" min="1" max="15" name="realt_ps_import[max_images]" value="<?php echo \esc_attr( (int) ( $opts['max_images'] ?? 6 ) ); ?>" />
-		<p class="description"><?php \esc_html_e( 'Upper limit of images to sideload per post.', 'realt-ps' ); ?></p>
+        <p class="description"><?php \esc_html_e( 'Upper limit of images to sideload per post.', 'property-scrapper' ); ?></p>
 		<?php
 	}
 
@@ -185,8 +185,8 @@ class Settings {
 		$mode = $opts['mode'] ?? 'scraping';
 		?>
 		<select name="realt_ps_import[mode]">
-			<option value="scraping" <?php \selected( $mode, 'scraping' ); ?>><?php \esc_html_e( 'Scraping', 'realt-ps' ); ?></option>
-			<option value="feed" <?php \selected( $mode, 'feed' ); ?>><?php \esc_html_e( 'Feed (if available)', 'realt-ps' ); ?></option>
+            <option value="scraping" <?php \selected( $mode, 'scraping' ); ?>><?php \esc_html_e( 'Scraping', 'property-scrapper' ); ?></option>
+            <option value="feed" <?php \selected( $mode, 'feed' ); ?>><?php \esc_html_e( 'Feed (if available)', 'property-scrapper' ); ?></option>
 		</select>
 		<?php
 	}
@@ -195,7 +195,7 @@ class Settings {
 		$opts = \get_option( 'realt_ps_geocoding', [] );
 		?>
 		<input type="text" class="regular-text" name="realt_ps_geocoding[mapycz_api_key]" value="<?php echo \esc_attr( $opts['mapycz_api_key'] ?? '' ); ?>" />
-		<p class="description"><?php \esc_html_e( 'Enter your Mapy.cz API key.', 'realt-ps' ); ?></p>
+        <p class="description"><?php \esc_html_e( 'Enter your Mapy.cz API key.', 'property-scrapper' ); ?></p>
 		<?php
 	}
 
@@ -209,7 +209,7 @@ class Settings {
 			<input type="file" name="realt_ps_areas_geojson" accept=".geojson,application/json" />
 		</p>
 		<?php if ( $url ) : ?>
-			<p class="description"><?php echo \esc_html( $dest ); ?> — <a href="<?php echo \esc_url( $url ); ?>" target="_blank"><?php \esc_html_e( 'Download current', 'realt-ps' ); ?></a></p>
+            <p class="description"><?php echo \esc_html( $dest ); ?> — <a href="<?php echo \esc_url( $url ); ?>" target="_blank"><?php \esc_html_e( 'Download current', 'property-scrapper' ); ?></a></p>
 		<?php else : ?>
 			<p class="description"><?php echo \esc_html( $current ); ?></p>
 		<?php endif; ?>
@@ -230,7 +230,7 @@ class Settings {
 			<input type="file" name="realt_ps_street_map_csv" accept=".csv,text/csv" />
 		</p>
 		<?php if ( $url ) : ?>
-			<p class="description"><?php echo \esc_html( $dest ); ?> — <a href="<?php echo \esc_url( $url ); ?>" target="_blank"><?php \esc_html_e( 'Download current', 'realt-ps' ); ?></a></p>
+            <p class="description"><?php echo \esc_html( $dest ); ?> — <a href="<?php echo \esc_url( $url ); ?>" target="_blank"><?php \esc_html_e( 'Download current', 'property-scrapper' ); ?></a></p>
 		<?php else : ?>
 			<p class="description"><?php echo \esc_html( $current ); ?></p>
 		<?php endif; ?>
@@ -251,7 +251,7 @@ class Settings {
 		$opts = \get_option( 'realt_ps_scraping', [ 'rate_limit' => 10 ] );
 		?>
 		<input type="number" min="1" max="60" name="realt_ps_scraping[rate_limit]" value="<?php echo \esc_attr( (int) ( $opts['rate_limit'] ?? 10 ) ); ?>" />
-		<p class="description"><?php \esc_html_e( 'Requests per minute per domain.', 'realt-ps' ); ?></p>
+        <p class="description"><?php \esc_html_e( 'Requests per minute per domain.', 'property-scrapper' ); ?></p>
 		<?php
 	}
 
@@ -259,7 +259,7 @@ class Settings {
 		$opts = \get_option( 'realt_ps_scraping', [ 'http_timeout' => 12 ] );
 		?>
 		<input type="number" min="5" max="30" name="realt_ps_scraping[http_timeout]" value="<?php echo \esc_attr( (int) ( $opts['http_timeout'] ?? 12 ) ); ?>" />
-		<p class="description"><?php \esc_html_e( 'Per-request timeout for list/detail pages.', 'realt-ps' ); ?></p>
+        <p class="description"><?php \esc_html_e( 'Per-request timeout for list/detail pages.', 'property-scrapper' ); ?></p>
 		<?php
 	}
 
@@ -267,7 +267,7 @@ class Settings {
 		$opts = \get_option( 'realt_ps_scraping', [ 'http_retries' => 2 ] );
 		?>
 		<input type="number" min="0" max="3" name="realt_ps_scraping[http_retries]" value="<?php echo \esc_attr( (int) ( $opts['http_retries'] ?? 2 ) ); ?>" />
-		<p class="description"><?php \esc_html_e( 'Number of retry attempts on failure.', 'realt-ps' ); ?></p>
+        <p class="description"><?php \esc_html_e( 'Number of retry attempts on failure.', 'property-scrapper' ); ?></p>
 		<?php
 	}
 
@@ -275,7 +275,7 @@ class Settings {
 		$opts = \get_option( 'realt_ps_import', [ 'max_items' => 20 ] );
 		?>
 		<input type="number" min="1" max="200" name="realt_ps_import[max_items]" value="<?php echo \esc_attr( (int) ( $opts['max_items'] ?? 20 ) ); ?>" />
-		<p class="description"><?php \esc_html_e( 'Upper cap of properties to fetch per run.', 'realt-ps' ); ?></p>
+        <p class="description"><?php \esc_html_e( 'Upper cap of properties to fetch per run.', 'property-scrapper' ); ?></p>
 		<?php
 	}
 
@@ -285,7 +285,7 @@ class Settings {
 		?>
 		<textarea name="realt_ps_scraping[start_urls]" rows="5" class="large-text code" placeholder="https://www.ceskereality.cz/prodej/byty/hlavni-mesto-praha/\nhttps://www.ceskereality.cz/pronajem/byty/hlavni-mesto-praha/\n">
 <?php echo \esc_textarea( $val ); ?></textarea>
-		<p class="description"><?php \esc_html_e( 'Seed listing pages to crawl. One per line.', 'realt-ps' ); ?></p>
+        <p class="description"><?php \esc_html_e( 'Seed listing pages to crawl. One per line.', 'property-scrapper' ); ?></p>
 		<?php
 	}
 
@@ -294,7 +294,7 @@ class Settings {
 		$contents = \file_exists( $path ) ? \file_get_contents( $path ) : '';
 		?>
 		<textarea name="realt_ps_scraping[selectors]" rows="8" class="large-text code" placeholder="{\n  \"list\": {...}\n}"><?php echo \esc_textarea( $contents ); ?></textarea>
-		<p class="description"><?php \esc_html_e( 'CSS/XPath selectors JSON. Saved to plugin config when you save.', 'realt-ps' ); ?></p>
+        <p class="description"><?php \esc_html_e( 'CSS/XPath selectors JSON. Saved to plugin config when you save.', 'property-scrapper' ); ?></p>
 		<?php
 		// Save selectors.json when settings saved
 		if ( isset( $_GET['settings-updated'] ) && $_GET['settings-updated'] && isset( $_POST['realt_ps_scraping']['selectors'] ) ) {
@@ -318,6 +318,63 @@ class Settings {
 		} else {
 			echo '<p>' . \esc_html__( 'Documentation coming soon.', 'realt-ps' ) . '</p>';
 		}
+
+		// Inline settings reference for quick admin help
+		echo '<hr style="margin:24px 0" />';
+		echo '<div style="max-width:900px;">';
+        echo '<h2 style="margin:0 0 10px;">' . \esc_html__( 'Settings Reference', 'property-scrapper' ) . '</h2>';
+        echo '<p class="description" style="margin-top:0">' . \esc_html__( 'Key options available across tabs.', 'property-scrapper' ) . '</p>';
+
+		// Import
+        echo '<h3 style="margin-top:18px;">' . \esc_html__( 'Import', 'property-scrapper' ) . '</h3>';
+		echo '<ul style="margin:6px 0 0 18px;list-style:disc;">'
+            . '<li><strong>' . \esc_html__( 'Enable Auto Sync (WP‑Cron)', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Schedule recurring imports.', 'property-scrapper' ) . '</li>'
+            . '<li><strong>' . \esc_html__( 'Cron Interval (hours)', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'How often the sync runs.', 'property-scrapper' ) . '</li>'
+            . '<li><strong>' . \esc_html__( 'Mode', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Scraping (default) or Feed.', 'property-scrapper' ) . '</li>'
+            . '<li><strong>' . \esc_html__( 'Max Run Time', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Hard cap per run to avoid timeouts.', 'property-scrapper' ) . '</li>'
+            . '<li><strong>' . \esc_html__( 'Image Timeout / Max Images', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Control media sideloading.', 'property-scrapper' ) . '</li>'
+            . '<li><strong>' . \esc_html__( 'Max Properties per Run', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Upper limit of items to fetch.', 'property-scrapper' ) . '</li>'
+            . '<li><strong>' . \esc_html__( 'Debug mode', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Skips strict area matching (for testing).', 'property-scrapper' ) . '</li>'
+			. '</ul>';
+
+		// Geocoding
+        echo '<h3 style="margin-top:18px;">' . \esc_html__( 'Geocoding', 'property-scrapper' ) . '</h3>';
+		echo '<ul style="margin:6px 0 0 18px;list-style:disc;">'
+            . '<li><strong>' . \esc_html__( 'Mapy.cz API Key', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Optional key for Mapy.cz integrations.', 'property-scrapper' ) . '</li>'
+            . '<li><strong>' . \esc_html__( 'Areas GeoJSON', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Upload neighborhood shapes (stored in uploads/property-scrapper/geo/).', 'property-scrapper' ) . '</li>'
+            . '<li><strong>' . \esc_html__( 'Street→Area CSV', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Map street names to area slugs (stored in uploads/property-scrapper/geo/).', 'property-scrapper' ) . '</li>'
+			. '</ul>';
+
+		// Scraping
+        echo '<h3 style="margin-top:18px;">' . \esc_html__( 'Scraping', 'property-scrapper' ) . '</h3>';
+		echo '<ul style="margin:6px 0 0 18px;list-style:disc;">'
+            . '<li><strong>' . \esc_html__( 'Rate Limit / HTTP Timeout / Retries', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Throttling and resilience.', 'property-scrapper' ) . '</li>'
+            . '<li><strong>' . \esc_html__( 'Selectors Config (JSON)', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'CSS/XPath selectors; saved to config/selectors.json on save.', 'property-scrapper' ) . '</li>'
+            . '<li><strong>' . \esc_html__( 'Start URLs', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'One listing URL per line; some legacy ceskereality paths are normalized automatically.', 'property-scrapper' ) . '</li>'
+            . '<li><strong>' . \esc_html__( 'Preview Scrape', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Use the action button above tabs; samples appear in this section.', 'property-scrapper' ) . '</li>'
+			. '</ul>';
+
+		// Tools
+        echo '<h3 style="margin-top:18px;">' . \esc_html__( 'Tools', 'property-scrapper' ) . '</h3>';
+		echo '<ul style="margin:6px 0 0 18px;list-style:disc;">'
+            . '<li><strong>' . \esc_html__( 'Run Now', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Trigger an immediate import.', 'property-scrapper' ) . '</li>'
+            . '<li><strong>' . \esc_html__( 'Preview Scrape', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Test list discovery only.', 'property-scrapper' ) . '</li>'
+            . '<li><strong>' . \esc_html__( 'Reassign City/Area', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Recalculate location taxonomy for properties.', 'property-scrapper' ) . '</li>'
+            . '<li><strong>' . \esc_html__( 'Seed Sample Locations', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Create a few Prague City/Area terms.', 'property-scrapper' ) . '</li>'
+            . '<li><strong>' . \esc_html__( 'Generate Listing Pages', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Create pages with the properties shortcode per Area.', 'property-scrapper' ) . '</li>'
+            . '<li><strong>' . \esc_html__( 'Download Latest CSV', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Get the last export if available.', 'property-scrapper' ) . '</li>'
+            . '<li><strong>' . \esc_html__( 'Delete All Property Terms', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Dangerous: removes all property taxonomies\' terms.', 'property-scrapper' ) . '</li>'
+			. '</ul>';
+
+		// Other
+        echo '<h3 style="margin-top:18px;">' . \esc_html__( 'Other', 'property-scrapper' ) . '</h3>';
+		echo '<ul style="margin:6px 0 0 18px;list-style:disc;">'
+            . '<li><strong>' . \esc_html__( 'Logs', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Uploads directory: uploads/property-scrapper/logs.', 'property-scrapper' ) . '</li>'
+            . '<li><strong>' . \esc_html__( 'Areas', 'property-scrapper' ) . ':</strong> ' . \esc_html__( 'Read-only list of Area terms with counts.', 'property-scrapper' ) . '</li>'
+            . '<li><strong>' . \esc_html__( 'Shortcode', 'property-scrapper' ) . ':</strong> ' . \esc_html__( '[realt_ps_properties title="Example" area="karlin" per_page="12"]', 'property-scrapper' ) . '</li>'
+			. '</ul>';
+
+		echo '</div>';
 	}
 
 	public function section_tools() {

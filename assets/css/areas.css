@@ -1,0 +1,17 @@
+.realt-areas{margin-top:14px}
+.realt-areas-list{list-style:none;margin:0;padding:0;display:block}
+.realt-areas-list li{margin:0 0 8px 0;padding:0}
+.realt-areas-list li:last-child{margin-bottom:0}
+.realt-areas-list a{display:flex;align-items:center;justify-content:space-between;width:100%;text-decoration:none;padding:12px 14px;border-radius:10px;background:#f5f7fb;color:#1a1f36;font-weight:600;line-height:1.2;transition:background .2s ease,color .2s ease,transform .05s ease,box-shadow .2s ease;font-size:14px;border:1px solid #e6eaf5;gap:12px}
+.realt-areas-list a:hover{background:#0b5fff;color:#fff;border-color:#0b5fff}
+.realt-areas-list a:focus{outline:none;box-shadow:0 0 0 3px rgba(11,95,255,.3)}
+.realt-areas-list a:active{transform:translateY(1px)}
+.realt-areas-list a.is-active{background:#0b5fff;color:#fff;border-color:#0b5fff}
+.realt-areas-name{flex:1 1 auto}
+.realt-areas-count{flex:0 0 auto;min-width:32px;text-align:center;padding:6px 10px;border-radius:999px;background:#fff;border:1px solid #e6eaf5;color:#1a1f36;font-weight:700}
+.realt-areas-list a:hover .realt-areas-count,.realt-areas-list a.is-active .realt-areas-count{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.35);color:#fff}
+@media (max-width:480px){
+	.realt-areas-list a{padding:10px 12px;font-size:13px}
+}
+
+
