@@ -1,3 +1,8 @@
-city_slug,area_slug,street_name_normalized,notes
-praha-4,podoli,podolska,main corridor
-
+city_slug,area_slug,street_name_normalized,notes,state
+praha-4,podoli,podolska,main corridor along Vltava,
+praha-4,branik,modranska,key access road,
+praha-4,nusle,nuselska,central axis,
+praha-4,krc,antala-staska,hospital vicinity,
+praha-4,michle,michelska,tram corridor,
+sobotin,klepacov,klepacov,hamlet of Sobotín,
+bavoryne,bavoryne,bavoryne,municipality-level fallback when street is missing,

@@ -156,6 +156,13 @@ class Importer {
 			// Some installs/themes read this alias as well
 			\update_post_meta( $post_id, 'prop_price', $priceDigits );
 		}
+		// Currency if provided by scraper
+		if ( isset( $item['currency'] ) && '' !== trim( (string) $item['currency'] ) ) {
+			$curr = strtoupper( preg_replace( '/[^A-Z]/', '', (string) $item['currency'] ) );
+			if ( in_array( $curr, [ 'CZK', 'EUR', 'USD' ], true ) ) {
+				\update_post_meta( $post_id, 'property_currency', $curr );
+			}
+		}
 		// Ensure labels exist but empty unless you have values
 		\update_post_meta( $post_id, 'property_price_before_label', '' );
 		\update_post_meta( $post_id, 'property_label_before', '' );
@@ -166,9 +173,30 @@ class Importer {
 			\update_post_meta( $post_id, 'property_latitude', (string) $item['lat'] );
 			\update_post_meta( $post_id, 'property_longitude', (string) $item['lng'] );
 		}
-		// Taxonomies: property_city and property_area
-		$citySlug = $this->derive_city_slug( $city, $address );
-		$areaSlug = $this->derive_area_slug( $address );
+		// Property type/action taxonomies (WP Residence): property_action_category, property_category
+		$actionSlug = (string) ( $item['action'] ?? '' );
+		$categorySlug = (string) ( $item['category_slug'] ?? '' );
+		$subcategorySlug = (string) ( $item['subcategory_slug'] ?? '' );
+		if ( '' !== $actionSlug ) {
+			$this->ensure_term_and_assign( $post_id, 'property_action_category', ucfirst( str_replace( '-', ' ', $actionSlug ) ), $actionSlug );
+		}
+		if ( '' !== $subcategorySlug ) {
+			$this->ensure_term_and_assign( $post_id, 'property_category', ucfirst( str_replace( '-', ' ', $subcategorySlug ) ), $subcategorySlug );
+		}
+		if ( '' !== $categorySlug ) {
+			$this->ensure_term_and_assign( $post_id, 'property_category', ucfirst( str_replace( '-', ' ', $categorySlug ) ), $categorySlug );
+		}
+		// Taxonomies: property_city and property_area via assignment pipeline
+		$lat = isset( $item['lat'] ) && is_numeric( $item['lat'] ) ? (float) $item['lat'] : null;
+		$lng = isset( $item['lng'] ) && is_numeric( $item['lng'] ) ? (float) $item['lng'] : null;
+		$assign = ( new \Realt\PropertyScrapper\Locations\Assigner() )->assign( $address, $city, $lat, $lng );
+		$citySlug = (string) ( $assign['city_slug'] ?? '' );
+		$areaSlug = (string) ( $assign['area_slug'] ?? '' );
+		if ( '' === $citySlug && '' === $areaSlug ) {
+			// Fallback to simple heuristics
+			$citySlug = $this->derive_city_slug( $city, $address );
+			$areaSlug = $this->derive_area_slug( $address );
+		}
 		$cityName = $city ? $city : ( $citySlug ? ucfirst( str_replace( '-', ' ', $citySlug ) ) : '' );
 		$areaName = $areaSlug ? ucfirst( str_replace( '-', ' ', $areaSlug ) ) : '';
 		if ( $citySlug ) { $this->ensure_term_and_assign( $post_id, 'property_city', $cityName ?: 'Praha', $citySlug ); }
@@ -266,6 +294,28 @@ class Importer {
 		foreach ( $defaults as $meta_key => $meta_value ) {
 			\update_post_meta( $post_id, $meta_key, $meta_value );
 		}
+		// Map scraped fields: condition, energy class, and floor
+		// Also map usable area (m2) to theme's expected meta key
+		$areaM2 = (string) ( $item['area_m2'] ?? '' );
+		if ( '' !== $areaM2 ) {
+			$areaDigits = preg_replace( '/[^0-9]/', '', $areaM2 );
+			if ( '' !== $areaDigits ) { \update_post_meta( $post_id, 'property_size', $areaDigits ); }
+		}
+		$condition = (string) ( $item['condition'] ?? '' );
+		if ( '' !== $condition ) {
+			\update_post_meta( $post_id, 'property_condition', $condition );
+		}
+		$energyClass = (string) ( $item['energy_class'] ?? '' );
+		$energyLabel = (string) ( $item['energy_class_label'] ?? '' );
+		if ( '' !== $energyClass ) { \update_post_meta( $post_id, 'energy_class', strtoupper( $energyClass ) ); }
+		if ( '' !== $energyLabel ) { \update_post_meta( $post_id, '_realt_ps_energy_label', $energyLabel ); }
+		$floorText = (string) ( $item['floor_text'] ?? '' );
+		$floorNum = (string) ( $item['floor'] ?? '' );
+		if ( '' !== $floorText ) { \update_post_meta( $post_id, '_realt_ps_floor_text', $floorText ); }
+		if ( '' !== $floorNum ) {
+			// Common WP Residence floor meta key
+			\update_post_meta( $post_id, 'property_on_floor', $floorNum );
+		}
 		// Provide a basic hidden address similar to theme's computed field
 		if ( $address || $city ) {
 			$hidden = trim( $address );
@@ -332,6 +382,8 @@ class Importer {
 
 	private function slugify( string $value ): string {
 		$v = strtolower( $this->to_ascii( $value ) );
+		// Remove apostrophes/backticks added in transliteration (e.g., "Dub'a" -> "duba")
+		$v = str_replace( ["'", "’", "`"], '', $v );
 		$v = preg_replace( '/[^a-z0-9]+/', '-', $v );
 		$v = trim( $v, '-' );
 		return $v;

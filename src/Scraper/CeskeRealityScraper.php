@@ -31,8 +31,8 @@ class CeskeRealityScraper {
 		$maxSeconds = max( 15, (int) ( $optsScrape['max_seconds'] ?? 50 ) );
 		// Prefer Import tab's max_items if set, fallback to Scraping for backward compatibility
 		$maxItems = max( 1, (int) ( $optsImport['max_items'] ?? ( $optsScrape['max_items'] ?? 5 ) ) );
-		$httpTimeout = max( 5, min( 20, (int) ( $opts['http_timeout'] ?? 10 ) ) );
-		$httpRetries = max( 0, min( 2, (int) ( $opts['http_retries'] ?? 1 ) ) );
+		$httpTimeout = max( 5, min( 30, (int) ( $optsScrape['http_timeout'] ?? 12 ) ) );
+		$httpRetries = max( 0, min( 3, (int) ( $optsScrape['http_retries'] ?? 2 ) ) );
 		$client = new HttpClient( $this->rateLimiter, '', $httpTimeout, $httpRetries );
 		$startedAt = microtime( true );
 		foreach ( $startUrls as $rawUrl ) {
@@ -52,6 +52,17 @@ class CeskeRealityScraper {
 			if ( empty( $resp['ok'] ) ) { $this->logger->log_warn( 'fetch_list_failed', [ 'url' => $url, 'error' => $resp['error'] ?? '' ] ); continue; }
 			$listHtml = $resp['body'];
 			$listNodes = $this->first_nodes( $listHtml, $this->selectors_to_array( $selectors['list']['item'] ?? '.item' ) );
+			// If no list nodes found, attempt a generic anchor scan to discover detail links
+			if ( empty( $listNodes ) ) {
+				$allAnchors = Html::query_all( $listHtml, 'a' );
+				$fakeNodes = [];
+				foreach ( $allAnchors as $a ) {
+					$href = Html::attr( $a, 'href' );
+					if ( $this->looks_like_detail_url( $href ) ) { $fakeNodes[] = $a; }
+				}
+				// Wrap anchors as a homogeneous node list to reuse the loop below
+				if ( $fakeNodes ) { $listNodes = $fakeNodes; }
+			}
 			foreach ( $listNodes as $node ) {
 				if ( ( microtime( true ) - $startedAt ) > $maxSeconds ) { $this->logger->log_info( 'time_budget_exceeded', [ 'seconds' => $maxSeconds, 'count' => count( $items ) ] ); break 2; }
 				if ( count( $items ) >= $maxItems ) { $this->logger->log_info( 'item_cap_reached', [ 'max_items' => $maxItems ] ); break 2; }
@@ -89,6 +100,13 @@ class CeskeRealityScraper {
 				if ( empty( $detail['ok'] ) ) { $this->logger->log_warn( 'fetch_detail_failed', [ 'url' => $link, 'error' => $detail['error'] ?? '' ] ); continue; }
                 $item = $this->parse_detail( $detail['body'], $selectors );
                 $item['source_url'] = $link;
+				// Derive action/category/subcategory from URL path (e.g., /prodej/komercni-prostory/hotely/...)
+				$ptype = $this->extract_type_from_url( $link );
+				if ( ! empty( $ptype ) ) {
+					if ( isset( $ptype['action'] ) ) { $item['action'] = $ptype['action']; }
+					if ( isset( $ptype['category'] ) ) { $item['category_slug'] = $ptype['category']; }
+					if ( isset( $ptype['subcategory'] ) ) { $item['subcategory_slug'] = $ptype['subcategory']; }
+				}
 				$item['title'] = $item['title'] ?: $title;
 				// Normalize price and fallback to list-card price if detail is empty/non-numeric
 				$item['price'] = $this->normalize_price( (string) ( $item['price'] ?? '' ) );
@@ -104,8 +122,9 @@ class CeskeRealityScraper {
                     }
                     $item['images'] = array_values( array_unique( array_filter( $resolved ) ) );
                 }
-				// Only exclude when city is known and clearly not Prague; allow unknown city to pass
-				if ( isset( $item['city'] ) && '' !== trim( (string) $item['city'] ) && ! $this->is_prague( $item['city'] ) ) { continue; }
+				// Persist a JSON snapshot of the scraped item for debugging
+				// $this->logger->save_json_item( $item );
+				// if ( isset( $item['city'] ) && '' !== trim( (string) $item['city'] ) && ! $this->is_prague( $item['city'] ) ) { continue; }
 				$items[] = $item;
 			}
 		}
@@ -170,8 +189,8 @@ class CeskeRealityScraper {
 		$urlsRaw = trim( (string) ( $cfg['start_urls'] ?? '' ) );
 		if ( ! $urlsRaw ) {
 			return [
-				'https://www.ceskereality.cz/prodej/byty/hlavni-mesto-praha/',
-				'https://www.ceskereality.cz/pronajem/byty/hlavni-mesto-praha/',
+				'https://www.ceskereality.cz/prodej/byty/',
+				'https://www.ceskereality.cz/prodej/pozemky/',
 			];
 		}
 		$urls = array_filter( array_map( 'trim', preg_split( '/\r?\n/', $urlsRaw ) ) );
@@ -180,8 +199,8 @@ class CeskeRealityScraper {
 			$normalized[] = $this->normalize_ceske_url( $u );
 		}
 		return $normalized ?: [
-			'https://www.ceskereality.cz/prodej/byty/hlavni-mesto-praha/',
-			'https://www.ceskereality.cz/pronajem/byty/hlavni-mesto-praha/',
+			'https://www.ceskereality.cz/prodej/byty/',
+			'https://www.ceskereality.cz/prodej/pozemky/',
 		];
 	}
 
@@ -189,6 +208,20 @@ class CeskeRealityScraper {
 		$dsel = $selectors['detail'] ?? [];
 		$data = [];
 		$data['external_id'] = $this->first_text( $html, $this->selectors_to_array( $dsel['external_id'] ?? '' ) );
+		// Fallback: extract by label "ID nemovitosti" from info grid when selectors fail or captured junk
+		if ( '' === trim( (string) $data['external_id'] ) || strlen( (string) $data['external_id'] ) > 64 ) {
+			$infoBlocks = Html::query_all( $html, 'div.i-info' );
+			foreach ( $infoBlocks as $blk ) {
+				$titleNodes = Html::query_all( $blk->C14N(), 'span.i-info__title' );
+				$valueNodes = Html::query_all( $blk->C14N(), 'span.i-info__value' );
+				if ( ! $titleNodes || ! $valueNodes ) { continue; }
+				$title = mb_strtolower( Html::text( $titleNodes[0] ) );
+				if ( false === strpos( $title, 'id nemovitosti' ) ) { continue; }
+				$val = Html::text( $valueNodes[0] );
+				$val = trim( preg_replace( '/\s+/u', ' ', $val ) );
+				if ( '' !== $val ) { $data['external_id'] = $val; break; }
+			}
+		}
 		$data['title'] = $this->first_text( $html, $this->selectors_to_array( $dsel['title'] ?? 'h1' ) );
 		$data['description'] = $this->first_text( $html, $this->selectors_to_array( $dsel['description'] ?? '.description' ) );
 		if ( '' === trim( (string) $data['description'] ) ) {
@@ -220,9 +253,38 @@ class CeskeRealityScraper {
 		}
 		$data['price'] = $this->first_text( $html, $this->selectors_to_array( $dsel['price'] ?? '.price' ) );
 		$data['price'] = $this->normalize_price( $data['price'] );
+		// Currency via JSON-LD priceCurrency or by heuristics from visible text
+		$currency = $this->extract_currency_from_jsonld( $html );
+		if ( '' === $currency ) {
+			// Simple visible-symbol fallback
+			if ( preg_match( '/\bCZK\b|Kč/u', $html ) ) { $currency = 'CZK'; }
+			elseif ( false !== strpos( $html, '€' ) || preg_match( '/\bEUR\b/u', $html ) ) { $currency = 'EUR'; }
+			elseif ( false !== strpos( $html, '$' ) || preg_match( '/\bUSD\b/u', $html ) ) { $currency = 'USD'; }
+		}
+		if ( '' !== $currency ) { $data['currency'] = $currency; }
 		$address = $this->first_text( $html, $this->selectors_to_array( $dsel['address'] ?? '.address' ) );
 		$data['address'] = $address;
 		$data['city'] = $this->extract_city( $address );
+		// Area (m2): selectors then fallback to label-based scan for "Plocha užitná"
+		$areaRaw = $this->first_text( $html, $this->selectors_to_array( $dsel['area_m2'] ?? '' ) );
+		if ( '' === trim( (string) $areaRaw ) ) {
+			$infoBlocks = Html::query_all( $html, 'div.i-info' );
+			foreach ( $infoBlocks as $blk ) {
+				$titleNodes = Html::query_all( $blk->C14N(), 'span.i-info__title' );
+				$valueNodes = Html::query_all( $blk->C14N(), 'span.i-info__value' );
+				if ( ! $titleNodes || ! $valueNodes ) { continue; }
+				$title = mb_strtolower( Html::text( $titleNodes[0] ) );
+				// Match common Czech labels for usable area
+				if ( false !== strpos( $title, 'plocha užitná' ) || false !== strpos( $title, 'užitná plocha' ) ) {
+					$areaRaw = Html::text( $valueNodes[0] );
+					break;
+				}
+			}
+		}
+		if ( '' !== trim( (string) $areaRaw ) ) {
+			$digits = preg_replace( '/[^0-9]/', '', $areaRaw );
+			$data['area_m2'] = $digits !== '' ? $digits : '';
+		}
 		// Site-specific fallback: address and city from driving distance input
 		$addrInput = Html::query_all( $html, '#driving_calculator_from' );
 		if ( $addrInput ) {
@@ -255,6 +317,44 @@ class CeskeRealityScraper {
 				}
 			}
 		}
+		// Additional attributes from info grid: condition, energy class, floor
+		$infoBlocks = Html::query_all( $html, 'div.i-info' );
+		if ( $infoBlocks ) {
+			foreach ( $infoBlocks as $blk ) {
+				$titleNodes = Html::query_all( $blk->C14N(), 'span.i-info__title' );
+				$valueNodes = Html::query_all( $blk->C14N(), 'span.i-info__value' );
+				if ( ! $titleNodes || ! $valueNodes ) { continue; }
+				$rawTitle = Html::text( $titleNodes[0] );
+				$title = mb_strtolower( trim( preg_replace( '/\s+/u', ' ', $rawTitle ) ) );
+				$val = trim( preg_replace( '/\s+/u', ' ', Html::text( $valueNodes[0] ) ) );
+				if ( '' === $val ) { continue; }
+				// Energy performance class (e.g., "G - Mimořádně nehospodárná")
+				if ( false !== strpos( $title, 'energetick' ) || false !== strpos( $title, 'energetická náročnost' ) ) {
+					$data['energy_class_label'] = $val;
+					// Extract leading class letter A-G if present
+					if ( preg_match( '/\b([A-G])\b/u', strtoupper( $val ), $m ) ) {
+						$data['energy_class'] = strtoupper( $m[1] );
+					}
+					continue;
+				}
+				// Property condition (e.g., "Bezvadný", "Po rekonstrukci")
+				if ( false !== strpos( $title, 'stav nemovitosti' ) ) {
+					$data['condition'] = $val;
+					continue;
+				}
+				// Floor / storey (e.g., "3. patro", "1. podlaží", "Přízemí")
+				if ( false !== strpos( $title, 'patro' ) || false !== strpos( $title, 'podlaž' ) || false !== strpos( $title, 'podlazi' ) ) {
+					$data['floor_text'] = $val;
+					$lower = mb_strtolower( $val );
+					$floorNum = null;
+					if ( false !== strpos( $lower, 'přízem' ) ) { $floorNum = 0; }
+					if ( false !== strpos( $lower, 'suter' ) ) { $floorNum = -1; }
+					if ( null === $floorNum && preg_match( '/-?\d+/', $val, $m ) ) { $floorNum = (int) $m[0]; }
+					if ( null !== $floorNum ) { $data['floor'] = (string) $floorNum; }
+					continue;
+				}
+			}
+		}
         // Collect image URLs using selectors that may specify different attributes
         $imgSelectors = $this->selectors_to_array( $dsel['images'] ?? '.gallery img@src, .gallery img@data-src, .gallery source@srcset' );
         $imgUrls = [];
@@ -279,6 +379,39 @@ class CeskeRealityScraper {
         }
         $data['images'] = array_values( array_unique( array_filter( $imgUrls ) ) );
 		return $data;
+	}
+
+	private function extract_currency_from_jsonld( string $html ): string {
+		$scriptNodes = Html::query_all( $html, 'script' );
+		foreach ( $scriptNodes as $sn ) {
+			$type = strtolower( Html::attr( $sn, 'type' ) );
+			if ( false === strpos( $type, 'ld+json' ) ) { continue; }
+			$json = trim( Html::text( $sn ) );
+			if ( '' === $json ) { continue; }
+			$decoded = json_decode( $json, true );
+			if ( null === $decoded ) { continue; }
+			$found = $this->deep_find_key_string( $decoded, 'priceCurrency' );
+			if ( is_string( $found ) && '' !== trim( $found ) ) {
+				$code = strtoupper( trim( $found ) );
+				// Normalize common labels to ISO codes
+				if ( 'KČ' === $code ) { $code = 'CZK'; }
+				return $code;
+			}
+		}
+		return '';
+	}
+
+	private function deep_find_key_string( $node, string $key ) {
+		if ( is_array( $node ) ) {
+			if ( array_key_exists( $key, $node ) && is_string( $node[ $key ] ) ) { return $node[ $key ]; }
+			foreach ( $node as $child ) {
+				$found = $this->deep_find_key_string( $child, $key );
+				if ( is_string( $found ) && '' !== $found ) { return $found; }
+			}
+		} elseif ( is_object( $node ) ) {
+			return $this->deep_find_key_string( (array) $node, $key );
+		}
+		return '';
 	}
 
 	private function extract_coordinates( string $html ): array {
@@ -538,6 +671,36 @@ class CeskeRealityScraper {
 		// Also accept any URL ending with an id-like slug *.html
 		if ( preg_match( '#/[^/]+\.html(?:[?#].*)?$#i', $href ) ) { return true; }
 		return false;
+	}
+
+	private function extract_type_from_url( string $url ): array {
+		$parts = \wp_parse_url( $url );
+		if ( ! $parts ) { return []; }
+		$path = trim( (string) ( $parts['path'] ?? '' ) );
+		if ( '' === $path ) { return []; }
+		$segs = array_values( array_filter( explode( '/', $path ), 'strlen' ) );
+		$result = [];
+		if ( empty( $segs ) ) { return $result; }
+		// Action
+		$action = strtolower( $segs[0] );
+		if ( in_array( $action, [ 'prodej', 'pronajem', 'aukce', 'drazba' ], true ) ) {
+			$result['action'] = $action;
+		}
+		// Category and subcategory (best-effort heuristics)
+		// Common: /prodej/byty/... or /prodej/komercni-prostory/hotely/...
+		$startIdx = isset( $result['action'] ) ? 1 : 0;
+		if ( isset( $segs[ $startIdx ] ) ) {
+			$cat = strtolower( $segs[ $startIdx ] );
+			$result['category'] = $cat;
+			if ( isset( $segs[ $startIdx + 1 ] ) ) {
+				$sub = strtolower( $segs[ $startIdx + 1 ] );
+				// Skip obvious locality segments like obec-*, okres-*
+				if ( 0 !== strpos( $sub, 'obec-' ) && 0 !== strpos( $sub, 'okres-' ) && false === strpos( $sub, 'hlavni-mesto-praha' ) ) {
+					$result['subcategory'] = $sub;
+				}
+			}
+		}
+		return $result;
 	}
 }
 

@@ -2,8 +2,9 @@
 /**
  * Plugin Name: Property Scrapper for WP Residence
  * Description: Automated import, scraping fallback, and location management for WP Residence (Prague listings).
- * Version: 0.1.0
- * Author: Realt.cz
+ * Version: 1.1.0
+ * Author: Programmer Ikram
+ * Author URI: https://programmerikram.com
  * License: GPLv2 or later
  * Text Domain: realt-ps
  */
@@ -12,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'REALT_PS_VERSION', '0.1.0' );
+define( 'REALT_PS_VERSION', '1.1.0' );
 define( 'REALT_PS_SLUG', 'realt-ps' );
 define( 'REALT_PS_FILE', __FILE__ );
 define( 'REALT_PS_PATH', plugin_dir_path( __FILE__ ) );

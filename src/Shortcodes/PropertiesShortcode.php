@@ -64,6 +64,7 @@ class PropertiesShortcode {
 					<?php while ( $q->have_posts() ) : $q->the_post(); ?>
 						<?php
 						$price = get_post_meta( get_the_ID(), 'property_price', true );
+						$currency = get_post_meta( get_the_ID(), 'property_currency', true );
 						$address = get_post_meta( get_the_ID(), 'property_address', true );
 						$gallery_ids = get_post_meta( get_the_ID(), 'property_images', true );
 						if ( ! is_array( $gallery_ids ) || empty( $gallery_ids ) ) {
@@ -97,7 +98,13 @@ class PropertiesShortcode {
 								<?php endif; ?>
 								<div class="realt-ps-card__meta">
 									<?php if ( is_numeric( $price ) && $price > 0 ) : ?>
-										<span class="realt-ps-card__price"><?php echo esc_html( number_format_i18n( (int) $price ) ); ?></span>
+										<?php
+										$curr = strtoupper( is_string( $currency ) ? $currency : '' );
+										$symbol = 'Kč';
+										if ( 'EUR' === $curr ) { $symbol = '€'; }
+										elseif ( 'USD' === $curr ) { $symbol = '$'; }
+										?>
+										<span class="realt-ps-card__price"><?php echo esc_html( number_format_i18n( (int) $price ) . ' ' . $symbol ); ?></span>
 									<?php endif; ?>
 									<?php if ( $address ) : ?>
 										<span class="realt-ps-card__address"><span class="dashicons dashicons-location"></span> <?php echo esc_html( $address ); ?></span>

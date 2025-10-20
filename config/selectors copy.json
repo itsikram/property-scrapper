@@ -6,7 +6,7 @@
     "url": ".title a@href, h2 a@href, h3 a@href, a@href"
   },
   "detail": {
-    "external_id": "#listing-id, [data-listing-id]",
+    "external_id": "#listing-id, [data-listing-id],.s-estate-info .g-info__col:first-child .i-info:nth-child(2) .i-info__value",
     "title": "h1, .detail-title, .product-title,.s-estate-detail-intro__heading",
     "description": ".entry-content, .description, .text, .perex, #detail-desc",
     "price": ".i-estate__footer-price-value, .i-estate-detail__header-price-value, .price, .price-value, .cena",
@@ -14,7 +14,7 @@
     "street": ".address .street, .location .street, .adresa .ulice",
     "zip": ".address .zip, .location .zip, .adresa .psc",
     "layout": ".params .layout, .disposition, .param-layout",
-    "area_m2": ".params .area, .param-area, .plocha, .floor-area",
+    "area_m2": ".params .area, .param-area, .plocha, .floor-area,.s-estate-info .g-info__col:nth-child(2) .i-info:nth-child(3) .i-info__value",
     "condition": ".params .condition, .stav, .param-condition",
     "floor": ".params .floor, .patro, .param-floor",
     "type": ".params .type, .typ, .param-type",

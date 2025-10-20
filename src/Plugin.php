@@ -46,6 +46,42 @@ class Plugin {
 		// Shortcodes registry
 		( new ShortcodesRegistry() )->init();
 
+		// Frontend: append basic specs (condition, area m2, floor) on single property pages
+		\add_filter( 'the_content', function ( $content ) {
+			if ( \is_admin() ) { return $content; }
+			if ( ! \is_singular( 'estate_property' ) ) { return $content; }
+			$post_id = (int) ( \get_the_ID() ?: 0 );
+			if ( $post_id <= 0 ) { return $content; }
+			$condition = trim( (string) \get_post_meta( $post_id, 'property_condition', true ) );
+			$areaSize = trim( (string) \get_post_meta( $post_id, 'property_size', true ) );
+			$floorText = trim( (string) \get_post_meta( $post_id, '_realt_ps_floor_text', true ) );
+			$floorNum  = trim( (string) \get_post_meta( $post_id, 'property_on_floor', true ) );
+			$price     = trim( (string) \get_post_meta( $post_id, 'property_price', true ) );
+			$currency  = strtoupper( (string) \get_post_meta( $post_id, 'property_currency', true ) );
+			$parts = [];
+			if ( $condition !== '' ) {
+				$parts[] = '<li class="realt-ps-specs__item"><strong>Stav:</strong> ' . \esc_html( $condition ) . '</li>';
+			}
+			if ( $areaSize !== '' && is_numeric( $areaSize ) && (int) $areaSize > 0 ) {
+				$parts[] = '<li class="realt-ps-specs__item"><strong>Plocha:</strong> ' . \esc_html( number_format_i18n( (int) $areaSize ) ) . ' m²</li>';
+			}
+			$floorLabel = '';
+			if ( $floorText !== '' ) { $floorLabel = $floorText; }
+			elseif ( $floorNum !== '' ) { $floorLabel = $floorNum . '.'; }
+			if ( $floorLabel !== '' ) {
+				$parts[] = '<li class="realt-ps-specs__item"><strong>Podlaží:</strong> ' . \esc_html( $floorLabel ) . '</li>';
+			}
+			if ( is_numeric( $price ) && (int) $price > 0 ) {
+				$symbol = 'Kč';
+				if ( 'EUR' === $currency ) { $symbol = '€'; }
+				elseif ( 'USD' === $currency ) { $symbol = '$'; }
+				$parts[] = '<li class="realt-ps-specs__item"><strong>Cena:</strong> ' . \esc_html( number_format_i18n( (int) $price ) . ' ' . $symbol ) . '</li>';
+			}
+			if ( empty( $parts ) ) { return $content; }
+			$block = '<div class="realt-ps-specs" style="margin-top:16px"><ul class="realt-ps-specs__list" style="list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:12px 24px;margin:0">' . implode( '', $parts ) . '</ul></div>';
+			return $content . $block;
+		}, 20 );
+
 		// Frontend debug: show property data on single estate_property when requested by admin
 		\add_filter( 'the_content', function ( $content ) {
 			if ( \is_admin() ) { return $content; }
@@ -86,6 +122,29 @@ class Plugin {
 				. '</div>';
 			return $content . $block;
 		}, 99 );
+
+		// Frontend: append property taxonomies' slugs on single property pages
+		// \add_filter( 'the_content', function ( $content ) {
+		// 	if ( \is_admin() ) { return $content; }
+		// 	if ( ! \is_singular( 'estate_property' ) ) { return $content; }
+		// 	$post_id = (int) ( \get_the_ID() ?: 0 );
+		// 	if ( $post_id <= 0 ) { return $content; }
+
+		// 	$taxonomies = [ 'property_city', 'property_area' ];
+		// 	$parts = [];
+		// 	foreach ( $taxonomies as $taxonomy ) {
+		// 		$terms = \wp_get_object_terms( $post_id, $taxonomy, [ 'fields' => 'all' ] );
+		// 		if ( \is_wp_error( $terms ) || empty( $terms ) ) { continue; }
+		// 		$slugs = array_map( function ( $t ) { return (string) $t->slug; }, $terms );
+		// 		$tx = \get_taxonomy( $taxonomy );
+		// 		$label = $tx && isset( $tx->labels->singular_name ) ? (string) $tx->labels->singular_name : $taxonomy;
+		// 		$parts[] = '<span class="realt-ps-tax realt-ps-tax--' . \esc_attr( $taxonomy ) . '">' . \esc_html( $label ) . ': ' . \esc_html( implode( ', ', $slugs ) ) . '</span>';
+		// 	}
+
+		// 	if ( empty( $parts ) ) { return $content; }
+		// 	$block = '<div class="realt-ps-tax-slugs" style="margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;opacity:.85;font-size:14px;">' . implode( ' ', $parts ) . '</div>';
+		// 	return $content . $block;
+		// }, 20 );
 	}
 }
 

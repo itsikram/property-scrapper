@@ -13,9 +13,12 @@ class Admin {
 		// Actions
 		\add_action( 'admin_post_realt_ps_run_import', [ $this, 'handle_run_import' ] );
 		\add_action( 'admin_post_realt_ps_reassign', [ $this, 'handle_reassign' ] );
+		\add_action( 'admin_post_realt_ps_seed_locations', [ $this, 'handle_seed_locations' ] );
+		\add_action( 'admin_post_realt_ps_generate_pages', [ $this, 'handle_generate_pages' ] );
 		\add_action( 'admin_post_realt_ps_preview_scrape', [ $this, 'handle_preview_scrape' ] );
-		\add_action( 'admin_post_realt_ps_fetch_html', [ $this, 'handle_fetch_html' ] );
+		// removed: fetch html debug handler
 		\add_action( 'admin_post_realt_ps_download_csv', [ $this, 'handle_download_csv' ] );
+		\add_action( 'admin_post_realt_ps_delete_terms', [ $this, 'handle_delete_terms' ] );
 
 		// Settings (register on admin_init to ensure Settings API is loaded)
 		$settings = new Settings();
@@ -55,6 +58,7 @@ class Admin {
 			'logs' => __( 'Logs', 'realt-ps' ),
 			'docs' => __( 'Docs', 'realt-ps' ),
 			'tools' => __( 'Tools', 'realt-ps' ),
+			'areas' => __( 'Areas', 'realt-ps' ),
 		];
 		?>
 		<div class="wrap">
@@ -65,7 +69,44 @@ class Admin {
 				<?php endforeach; ?>
 			</h2>
 
-			<form method="post" action="options.php">
+			<?php if ( 'areas' === $tab ) : ?>
+				<h2><?php echo \esc_html__( 'Areas', 'realt-ps' ); ?></h2>
+				<?php
+				$terms = \get_terms( [ 'taxonomy' => 'property_area', 'hide_empty' => false ] );
+				if ( \is_wp_error( $terms ) ) {
+					echo '<p class="description">' . \esc_html( $terms->get_error_message() ) . '</p>';
+				} elseif ( empty( $terms ) ) {
+					?><p class="description"><?php echo \esc_html__( 'No areas found.', 'realt-ps' ); ?></p><?php
+				} else {
+					?>
+					<table class="widefat striped" style="max-width:900px;">
+						<thead>
+							<tr>
+								<th style="width:50%;"><?php echo \esc_html__( 'Name', 'realt-ps' ); ?></th>
+								<th style="width:40%;"><?php echo \esc_html__( 'Slug', 'realt-ps' ); ?></th>
+								<th style="width:10%;text-align:right;">#</th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $terms as $t ) : ?>
+								<tr>
+									<td><?php echo \esc_html( (string) $t->name ); ?></td>
+									<td><code><?php echo \esc_html( (string) $t->slug ); ?></code></td>
+									<td style="text-align:right;"><?php echo (int) $t->count; ?></td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+					<p class="description" style="margin-top:10px;">
+						<?php echo \esc_html( sprintf( __( 'Total: %d areas', 'realt-ps' ), count( $terms ) ) ); ?>
+					</p>
+					<?php
+				}
+				?>
+			</div>
+			<?php return; endif; ?>
+
+			<form method="post" action="options.php" enctype="multipart/form-data">
 				<?php
 			switch ( $tab ) {
 					case 'import':
@@ -109,6 +150,29 @@ class Admin {
 					<input type="hidden" name="action" value="realt_ps_preview_scrape" />
 					<?php \submit_button( \__( 'Preview Scrape (list only)', 'realt-ps' ), 'secondary' ); ?>
 				</form>
+				<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>" style="margin-top:8px;">
+					<?php \wp_nonce_field( 'realt_ps_reassign' ); ?>
+					<input type="hidden" name="action" value="realt_ps_reassign" />
+					<?php \submit_button( \__( 'Reassign City/Area', 'realt-ps' ), 'secondary' ); ?>
+				</form>
+				<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>" style="margin-top:8px;">
+					<?php \wp_nonce_field( 'realt_ps_seed_locations' ); ?>
+					<input type="hidden" name="action" value="realt_ps_seed_locations" />
+					<?php \submit_button( \__( 'Seed Sample Locations (10)', 'realt-ps' ), 'secondary' ); ?>
+				</form>
+				<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>" style="margin-top:8px;">
+					<?php \wp_nonce_field( 'realt_ps_generate_pages' ); ?>
+					<input type="hidden" name="action" value="realt_ps_generate_pages" />
+					<?php \submit_button( \__( 'Generate Listing Pages for Locations', 'realt-ps' ), 'secondary' ); ?>
+				</form>
+				<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>" style="margin-top:16px;">
+					<?php \wp_nonce_field( 'realt_ps_delete_terms' ); ?>
+					<input type="hidden" name="action" value="realt_ps_delete_terms" />
+					<?php \submit_button( \__( 'Delete All Property Terms (cities, areas, etc.)', 'realt-ps' ), 'delete' ); ?>
+					<p class="description" style="margin-top:6px;">
+						<?php echo \esc_html__( 'This will delete all terms for property-related taxonomies (cities, areas, country, status, label, categories, actions, features). This cannot be undone.', 'realt-ps' ); ?>
+					</p>
+				</form>
 				<?php $latest = \get_option( 'realt_ps_latest_csv' ); if ( $latest && ! empty( $latest['url'] ) ) : ?>
 					<form method="post" action="<?php echo \esc_url( \admin_url( 'admin-post.php' ) ); ?>" style="margin-top:8px;">
 						<?php \wp_nonce_field( 'realt_ps_download_csv' ); ?>
@@ -144,9 +208,59 @@ class Admin {
 		if ( ! \current_user_can( 'manage_options' ) ) {
 			\wp_die( \esc_html__( 'Insufficient permissions', 'realt-ps' ) );
 		}
-		\do_action( 'realt_ps/reassign' );
+		// Trigger a full reassignment via Assigner
+		( new \Realt\PropertyScrapper\Locations\Assigner() )->reassign_all( 100 );
 		\wp_safe_redirect( \admin_url( 'admin.php?page=realt-ps&tab=tools&reassigned=1' ) );
 		exit;
+	}
+
+	public function handle_seed_locations() {
+		\check_admin_referer( 'realt_ps_seed_locations' );
+		if ( ! \current_user_can( 'manage_options' ) ) { \wp_die( \esc_html__( 'Insufficient permissions', 'realt-ps' ) ); }
+		$locations = [
+			[ 'city' => 'Praha 4', 'area' => 'Podolí' ],
+			[ 'city' => 'Praha 4', 'area' => 'Braník' ],
+			[ 'city' => 'Praha 4', 'area' => 'Nusle' ],
+			[ 'city' => 'Praha 4', 'area' => 'Krč' ],
+			[ 'city' => 'Praha 4', 'area' => 'Michle' ],
+			[ 'city' => 'Praha 5', 'area' => 'Smíchov' ],
+			[ 'city' => 'Praha 5', 'area' => 'Košíře' ],
+			[ 'city' => 'Praha 6', 'area' => 'Dejvice' ],
+			[ 'city' => 'Praha 7', 'area' => 'Holešovice' ],
+			[ 'city' => 'Praha 8', 'area' => 'Karlín' ],
+		];
+		foreach ( $locations as $loc ) {
+			$citySlug = sanitize_title( $loc['city'] );
+			$areaSlug = sanitize_title( $loc['area'] );
+			self::ensure_term( 'property_city', $loc['city'], $citySlug );
+			self::ensure_term( 'property_area', $loc['area'], $areaSlug );
+		}
+		\wp_safe_redirect( \admin_url( 'admin.php?page=realt-ps&tab=tools&seeded=1' ) );
+		exit;
+	}
+
+	public function handle_generate_pages() {
+		\check_admin_referer( 'realt_ps_generate_pages' );
+		if ( ! \current_user_can( 'manage_options' ) ) { \wp_die( \esc_html__( 'Insufficient permissions', 'realt-ps' ) ); }
+		$areas = get_terms( [ 'taxonomy' => 'property_area', 'hide_empty' => false ] );
+		if ( ! \is_wp_error( $areas ) && is_array( $areas ) ) {
+			foreach ( $areas as $area ) {
+				$title = sprintf( '%s – %s', __( 'Properties in', 'realt-ps' ), $area->name );
+				$existing = get_page_by_title( $title );
+				if ( $existing ) { continue; }
+				$content = sprintf( '[realt_ps_properties title="%s" area="%s" per_page="12"]', esc_attr( $title ), esc_attr( $area->slug ) );
+				$pid = wp_insert_post( [ 'post_title' => $title, 'post_type' => 'page', 'post_status' => 'publish', 'post_content' => $content ] );
+			}
+		}
+		\wp_safe_redirect( \admin_url( 'admin.php?page=realt-ps&tab=tools&pages=1' ) );
+		exit;
+	}
+
+	private static function ensure_term( string $taxonomy, string $name, string $slug ): void {
+		$term = \get_term_by( 'slug', $slug, $taxonomy );
+		if ( ! $term || \is_wp_error( $term ) ) {
+			\wp_insert_term( $name, $taxonomy, [ 'slug' => $slug ] );
+		}
 	}
 
 	public function handle_preview_scrape() {
@@ -160,29 +274,7 @@ class Admin {
 		exit;
 	}
 
-	public function handle_fetch_html() {
-		\check_admin_referer( 'realt_ps_fetch_html' );
-		if ( ! \current_user_can( 'manage_options' ) ) {
-			\wp_die( \esc_html__( 'Insufficient permissions', 'realt-ps' ) );
-		}
-		$url = isset( $_POST['url'] ) ? trim( (string) $_POST['url'] ) : '';
-		if ( '' === $url ) {
-			\set_transient( 'realt_ps_fetch_html_result', [ 'ok' => false, 'error' => 'Missing URL' ], 60 );
-			\wp_safe_redirect( \admin_url( 'admin.php?page=realt-ps&tab=scraping' ) );
-			exit;
-		}
-		$opts = \get_option( 'realt_ps_scraping', [ 'rate_limit' => 10 ] );
-		$rate = (int) ( $opts['rate_limit'] ?? 10 );
-		$timeout = max( 5, min( 20, (int) ( $opts['http_timeout'] ?? 12 ) ) );
-		$retries = max( 0, min( 2, (int) ( $opts['http_retries'] ?? 1 ) ) );
-		$limiter = new \Realt\PropertyScrapper\Utils\RateLimiter( $rate );
-		$client = new \Realt\PropertyScrapper\Utils\HttpClient( $limiter, '', $timeout, $retries );
-		$resp = $client->get( $url ); 
-		$result = [ 'url' => $url ] + $resp;
-		\set_transient( 'realt_ps_fetch_html_result', $result, 60 );
-		\wp_safe_redirect( \admin_url( 'admin.php?page=realt-ps&tab=scraping&realt_ps_url=' . rawurlencode( $url ) . '#realt_ps_scraping_fetch' ) );
-		exit;
-	}
+
 
 	public function handle_download_csv() {
 		\check_admin_referer( 'realt_ps_download_csv' );
@@ -200,6 +292,37 @@ class Admin {
 		\header( 'Content-Disposition: attachment; filename="' . basename( $path ) . '"' );
 		\header( 'Content-Length: ' . filesize( $path ) );
 		@\readfile( $path );
+		exit;
+	}
+
+	public function handle_delete_terms() {
+		\check_admin_referer( 'realt_ps_delete_terms' );
+		if ( ! \current_user_can( 'manage_options' ) ) {
+			\wp_die( \esc_html__( 'Insufficient permissions', 'realt-ps' ) );
+		}
+		$taxonomies = [
+			'property_city',
+			'property_area',
+			'property_country',
+			'property_status',
+			'property_label',
+			'property_category',
+			'property_action_category',
+			'property_features',
+			'property_state',
+			'property_county_state',
+		];
+		$deleted = 0;
+		foreach ( $taxonomies as $tx ) {
+			if ( ! \taxonomy_exists( $tx ) ) { continue; }
+			$terms = \get_terms( [ 'taxonomy' => $tx, 'hide_empty' => false ] );
+			if ( \is_wp_error( $terms ) || empty( $terms ) ) { continue; }
+			foreach ( $terms as $term ) {
+				$ok = \wp_delete_term( (int) $term->term_id, $tx );
+				if ( ! \is_wp_error( $ok ) ) { $deleted++; }
+			}
+		}
+		\wp_safe_redirect( \admin_url( 'admin.php?page=realt-ps&tab=tools&deleted_terms=' . (int) $deleted ) );
 		exit;
 	}
 }

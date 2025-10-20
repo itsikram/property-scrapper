@@ -1,5 +1,96 @@
 {
   "type": "FeatureCollection",
-  "features": []
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "city_slug": "praha-4",
+        "area_slug": "podoli",
+        "name": "Podolí"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [14.415, 50.045],
+          [14.435, 50.045],
+          [14.435, 50.055],
+          [14.415, 50.055],
+          [14.415, 50.045]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "city_slug": "praha-4",
+        "area_slug": "branik",
+        "name": "Braník"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [14.405, 50.015],
+          [14.425, 50.015],
+          [14.425, 50.025],
+          [14.405, 50.025],
+          [14.405, 50.015]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "city_slug": "praha-4",
+        "area_slug": "nusle",
+        "name": "Nusle"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [14.435, 50.055],
+          [14.455, 50.055],
+          [14.455, 50.065],
+          [14.435, 50.065],
+          [14.435, 50.055]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "city_slug": "praha-4",
+        "area_slug": "krc",
+        "name": "Krč"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [14.455, 50.025],
+          [14.475, 50.025],
+          [14.475, 50.035],
+          [14.455, 50.035],
+          [14.455, 50.025]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "city_slug": "praha-4",
+        "area_slug": "michle",
+        "name": "Michle"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [14.465, 50.045],
+          [14.485, 50.045],
+          [14.485, 50.055],
+          [14.465, 50.055],
+          [14.465, 50.045]
+        ]]
+      }
+    }
+  ]
 }
 

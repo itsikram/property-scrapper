@@ -33,6 +33,30 @@ class Logger {
             \error_log( '[PropertyScrapper] ' . trim( $line ) );
         }
 	}
+
+	/**
+	 * Save a pretty-printed JSON snapshot of a scraped property into the logs directory.
+	 * Returns the absolute file path on success, or null on failure.
+	 */
+	public function save_json_item( array $item ) {
+		$dir = \dirname( $this->file );
+		if ( ! \file_exists( $dir ) ) { \wp_mkdir_p( $dir ); }
+		$timestamp = gmdate( 'Ymd-His' );
+		$basis = '';
+		if ( ! empty( $item['external_id'] ) ) { $basis = (string) $item['external_id']; }
+		elseif ( ! empty( $item['source_url'] ) ) { $basis = (string) $item['source_url']; }
+		else { $basis = (string) ( $item['title'] ?? '' ); }
+		$hash = substr( md5( $basis . microtime( true ) ), 0, 10 );
+		$path = \trailingslashit( $dir ) . 'item-' . $timestamp . '-' . $hash . '.json';
+		$jsonFlags = JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
+		$payload = \wp_json_encode( $item, $jsonFlags );
+		$ok = @\file_put_contents( $path, $payload );
+		if ( false === $ok ) {
+			\error_log( '[PropertyScrapper] Failed to write JSON item to ' . $path );
+			return null;
+		}
+		return $path;
+	}
 }
 
 

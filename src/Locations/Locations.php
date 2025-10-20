@@ -18,6 +18,7 @@ class Locations {
 			register_term_meta( $tax, 'hero_image_id', [ 'type' => 'integer', 'single' => true, 'show_in_rest' => true, 'sanitize_callback' => 'absint' ] );
 			register_term_meta( $tax, 'gallery_ids', [ 'type' => 'array', 'single' => true, 'show_in_rest' => true ] );
 			register_term_meta( $tax, 'short_description', [ 'type' => 'string', 'single' => true, 'show_in_rest' => true, 'sanitize_callback' => 'wp_kses_post' ] );
+			register_term_meta( $tax, 'city_slug', [ 'type' => 'string', 'single' => true, 'show_in_rest' => true, 'sanitize_callback' => 'sanitize_title' ] );
 		}
 	}
 }
